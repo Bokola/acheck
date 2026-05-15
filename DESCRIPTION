@@ -1,0 +1,15 @@
+Package: acheck
+Version: 0.0.0.9000
+Title: ACTED Data Processing Helpers
+Description: Custom functions for organizing ACTED humanitarian data for analysis.
+Authors@R: person(given = "Basil",
+       family = "Okola",
+       role = c("aut", "cre"),
+       email = "okolabasilowiti@gmail.com",
+       comment = c(ORCID = "0000-0000-0000-0000"))
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+URL: https://github.com/Bokola/acheck
+BugReports: https://github.com/Bokola/acheck/issues

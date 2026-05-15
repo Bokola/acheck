@@ -1,1 +1,9 @@
 ^dev$
+^LICENSE\.md$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.positai$
+^\.claude$
+^README\.Rmd$
+^\.github$
+^codecov\.yml$
