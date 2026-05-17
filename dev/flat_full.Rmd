@@ -1,5 +1,5 @@
 ---
-title: "flat_full.Rmd for working package"
+title: "Data checks"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -10,6 +10,7 @@ editor_options:
 
 ```{r development, include=FALSE}
 library(testthat)
+library(roxygen2)
 ```
 
 <!--
@@ -40,14 +41,14 @@ and `system.file()` to read it in your examples.
 pkgload::load_all(path = here::here(), export_all = FALSE)
 
 # You will be able to read your example data file in each of your function examples and tests as follows - see chunks below
-datafile <- system.file("nyc_squirrels_sample.csv", package = "acheck")
-nyc_squirrels <- read.csv(datafile, encoding = "UTF-8")
-
-nyc_squirrels
+# datafile <- system.file("nyc_squirrels_sample.csv", package = "acheck")
+# nyc_squirrels <- read.csv(datafile, encoding = "UTF-8")
+# 
+# nyc_squirrels
 ```
 
 
-# The first function of the package: Calculate the median of a vector
+## Add gtsummary object to word
 
 <!--
 Create a chunk for the core of the function
@@ -67,24 +68,51 @@ After inflating the template
 # Prepare the code of your function here
 ```
 
-```{r function}
-#' My median
+```{r function-add_gt_to_word}
+format_num <- gtsummary::label_style_number()
+
+#' Add a gtsummary objet to word doc
 #'
-#' @param x Vector of Numeric values
-#' @inheritParams stats::median
+#' @param doc word doc created as `officer::read_docx()`
+#' @param gt_obj gtsummary object
+#' @param title character header
+#' @param landscape logical. page orientation
+#' @importFrom flextable  body_add_flextable
+#' @importFrom officer body_add_par body_add_break body_end_section_landscape
 #'
-#' @return
-#' Median of vector x
+#' @returns a word doc
 #' @export
 #'
 #' @examples
-my_median <- function(x, na.rm = TRUE) {
-  if (!is.numeric(x)) {
-    stop("x should be numeric")
+#' \dontrun{
+#' add_gt_to_word(doc, gt_obj, title, landscape = FALSE)
+#' }
+add_gt_to_word <- function(doc, gt_obj, title, landscape = FALSE) {
+  # Convert gtsummary to flextable
+  ft <- gtsummary::as_flex_table(gt_obj) %>%
+    flextable::autofit()
+  
+  # Add title and table
+  doc <- doc %>%
+    body_add_par(title, style = "heading 2") %>%
+    body_add_flextable(ft) %>%
+    body_add_par("") # spacing
+  
+  # Handle Orientation and Page Breaks
+  if (landscape) {
+    # Close the current landscape section
+    doc <- doc %>% body_end_section_landscape() 
+  } else {
+    # If not landscape, just add a standard page break
+    doc <- doc %>% body_add_break()
   }
-  stats::median(x, na.rm = na.rm)
+  
+  return(doc)
 }
+
 ```
+
+
 
 <!--
 Create a chunk with an example of use for your function
@@ -100,15 +128,6 @@ After inflating the template
 - This example will automatically be added in the vignette created from this Rmd template
 -->
 
-```{r examples}
-my_median(1:12)
-
-# Example with your dataset in "inst/"
-datafile <- system.file("nyc_squirrels_sample.csv", package = "acheck")
-nyc_squirrels <- read.csv(datafile, encoding = "UTF-8")
-# Apply my function
-my_median(nyc_squirrels[, "hectare_squirrel_number"])
-```
 
 <!--
 Create a chunk with a test of use for your function
@@ -123,66 +142,999 @@ After inflating the template
 -  This test code will automatically be added in the "tests/testthat/" directory
 -->
 
-```{r tests}
-test_that("my_median works properly and show error if needed", {
-  expect_true(my_median(1:12) == 6.5)
-  expect_error(my_median("text"))
-})
-
-# Test with your dataset in "inst/"
-datafile <- system.file("nyc_squirrels_sample.csv", package = "acheck")
-nyc_squirrels <- read.csv(datafile, encoding = "UTF-8")
-# Apply test on my function
-test_that("my_median works properly with internal dataset", {
-  expect_equal(my_median(nyc_squirrels[, "hectare_squirrel_number"]), 3)
+```{r tests-add_gt_to_word}
+library(testthat)
+library(officer)
+library(gtsummary)
+library(dplyr)
+test_that("add_gt_to_word works correctly under different conditions", {
+  
+  # setup: create dummy data and a basic gtsummary object
+  mock_df <- data.frame(
+    status = c("active", "inactive", "active"),
+    age = c(25, 34, 45)
+  )
+  mock_gt <- gtsummary::tbl_summary(mock_df, by = status)
+  
+  # test 1: verification of the standard portrait flow
+  doc_portrait <- officer::read_docx()
+  res_portrait <- add_gt_to_word(
+    doc = doc_portrait, 
+    gt_obj = mock_gt, 
+    title = "Test Portrait Title", 
+    landscape = FALSE
+  )
+  
+  # check that an officer document object is returned
+  expect_s3_class(res_portrait, "rdocx")
+  
+  # convert doc to content dataframe to check text insertion
+  content_p <- officer::docx_summary(res_portrait)
+  expect_true(any(content_p$text == "Test Portrait Title"))
+  
+  # test 2: verification of the landscape flow
+  doc_landscape <- read_docx()
+  res_landscape <- add_gt_to_word(
+    doc = doc_landscape, 
+    gt_obj = mock_gt, 
+    title = "Test Landscape Title", 
+    landscape = TRUE
+  )
+  
+  expect_s3_class(res_landscape, "rdocx")
+  
+  content_l <- docx_summary(res_landscape)
+  expect_true(any(content_l$text == "Test Landscape Title"))
+  
+  # test 3: safe verification of landscape structural layout differences
+  # landscape structural blocks alter row structures or total summary elements
+  expect_false(identical(nrow(content_p), nrow(content_l)))
 })
 ```
 
-# Calculate the mean of a vector
+## export list of gt objects/dataframes to word
+
+```{r  function-export_list_to_word}
+#' Export a list of dataframes to word
+#'
+#' @param table_list list of dataframes
+#' @param doc_path character vector of output directory
+#' @importFrom flextable  body_add_flextable
+#' @importFrom officer body_add_par body_add_break 
+#'
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{export_list_to_word()}
+export_list_to_word <- function(table_list, doc_path) {
+  
+  # initialize a new word document
+  doc <- officer::read_docx()
+  
+  # iterate through the named list
+  # .x is the table/df, .y is the name of the list element
+  purrr::iwalk(table_list, function(.x, .y) {
+    
+    # logic to handle different table types
+    if (inherits(.x, "gtsummary")) {
+      # convert gtsummary to flextable
+      ft <- gtsummary::as_flex_table(.x)
+    } else {
+      # treat as standard dataframe and format
+      ft <- flextable::flextable(.x) %>%
+        flextable::theme_booktabs() %>%
+        flextable::autofit() %>%
+        flextable::bold(part = "header")
+    }
+    
+    # add the header and the table to the document
+    doc <<- doc %>%
+      # use the list name as a header 2
+      body_add_par(.y, style = "heading 2") %>%
+      body_add_flextable(ft) %>%
+      # add a small spacer after each table
+      body_add_par("") 
+  })
+  
+  # save the completed document
+  print(doc, target = doc_path)
+}
+```
+
+
+## Create gtsummary table
+
+```{r function-create_summary_table}
+#' create a `gtsummary` table
+#'
+#' @param data dataframe
+#' @param cols columns to include
+#' @param labels character. labels
+#' @param group_by character. grouping variable
+#' @param strata character. stratifying variable
+#' @param percent_type character. percents by row or column
+#'
+#' @returns a list of gtsummary object 
+#' @export
+#'
+#' @examples
+#'\dontrun{create_summary_table()}
+create_summary_table <- function(data, 
+                                 cols = dplyr::everything(), 
+                                 labels = list(), 
+                                 group_by = NULL,
+                                 strata = NULL,
+                                 percent_type = "column") {
+  
+  
+  # internal helper to build the base table
+  build_summary <- function(df) {
+    df %>%
+      # any_of(group_by) handles the case where group_by might be null
+      dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
+      gtsummary::tbl_summary(
+        by = dplyr::any_of(group_by),
+        label = labels,
+        percent = percent_type,
+        type = list(all_categorical() ~ "categorical"),
+        statistic = list(
+          all_continuous() ~ "{mean} ({median})",
+          all_categorical() ~ "{n} ({p}%)"
+        ),
+        digits = list(
+          all_continuous() ~ purrr::partial(style_number, big.mark = ","),
+          all_categorical() ~ c(0, 1)
+        ),
+        missing = "no"
+      ) %>%
+      gtsummary::add_n() %>%
+      gtsummary::bold_labels()
+  }
+  
+  # logic to handle stratification
+  if (!is.null(strata)) {
+    data %>%
+      # ensure the strata column exists before passing to tbl_strata
+      gtsummary::tbl_strata(
+        strata = all_of(strata),
+        .tbl_fun = ~ build_summary(.x)
+      )
+  } else {
+    build_summary(data)
+  }
+}
+```
+
+## create a listing table using `gtreg{}`
+
+```{r function-create_listing_table}
+
+#' create `gtreg` table listing of data
+#'
+#' @param data dataframe
+#' @param cols columns to include
+#' @param labels character. labels
+#' @param group_by character. grouping variable 
+#'
+#' @returns a list
+#' @export
+#'
+#' @examples
+#'\dontrun{create_listing_table()}
+create_listing_table <- function(data,
+                                 cols = dplyr::everything(),
+                                 labels = list(),
+                                 group_by = NULL) {
+  data %>%
+    {
+      if (!is.null(group_by))
+        dplyr::arrange(., .data[[group_by]])
+      else
+        .
+    } %>%
+    dplyr::select({{ cols }}, dplyr::any_of(group_by)) %>%
+    gtreg::tbl_listing() %>%
+    gtsummary::bold_labels()
+}
+
+```
+
+## clean a vector of strings
+
+```{r function-clean_string}
+# clean string
+
+#' clean string of spaces and non alphanumeric characters and make lower case
+#'
+#' @param x a vector of characters
+#'
+#' @returns a vector
+#' @export
+#'
+#' @examples
+#' \dontrun{clean_String('Nachola124')}
+
+
+clean_string <- function(x) {
+  x %>%
+    as.character() %>%
+    stringr::str_to_lower() %>%
+    stringr::str_replace_all("[^a-z0-9]", "") %>%
+    stringr::str_trim()
+}
+```
+
+## recode beneficiary camps to known refugee camps
+
+```{r function-clean_camp}
+# clean ben_camp
+
+#' clean recode beneficiary camp 
+#'
+#' @param x dataframe
+#' @param col_name  character. column with camp names
+#'
+#' @returns dataframe
+#' @importFrom dplyr case_when all_of across
+#' @export
+#'
+#' @examples
+#' \dontrun{clean_camp(x, col_name = "ben_camp")}
+clean_camp <- function(x, col_name = "ben_camp"){
+  x  %>% 
+    dplyr::mutate(
+      across(all_of(col_name), ~ case_when(
+        # use stringr or grepl with the .x pronoun
+        grepl("\\bna\\b", .x, ignore.case = TRUE) & grepl("HIAS", reforgp, ignore.case = T) ~ "Nairobi",
+        grepl("^k", .x, ignore.case = TRUE) ~ "Kakuma",
+        grepl("^nai|east|urban|umoja", .x, ignore.case = TRUE) ~ "Nairobi",
+        grepl("^daga|^ifo|f0|fo|^haga|^v|dad|daad", .x, ignore.case = TRUE) ~ "Daadab",
+        TRUE ~ .x
+      ))
+    )
+}
+```
+
+
+## find households in ESR data
+
+```{r}
+# registrations appearing in ESR
+#' Title
+#'
+#' @param data1 dataframe. registration data
+#' @param data2 dataframe. ESR data
+#'
+#' @returns a dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{check_esr_registrations(data1 = df_clean, data2 = df_esr)}
+check_esr_registrations <- function(data1 = df_clean, data2 = df_esr) {
+
+  
+  # 1. prepare lookup keys from data2
+  # combine names and clean id and phone for matching
+  data2_prepared <- data2 %>%
+    dplyr::mutate(
+      full_name_clean = clean_string(paste(first_name, middle_name, last_name)),
+      first_surname = clean_string(paste(first_name, last_name)),
+      first_secname = clean_string(paste(first_name, middle_name)),
+      id_clean        = clean_string(id_number1),
+      phone_clean     = clean_string(phone_number)
+    )
+  
+  lookup_ids    <- unique(data2_prepared$id_clean)
+  lookup_names  <- unique(data2_prepared$full_name_clean)
+  lookup_names1  <- unique(data2_prepared$first_surname)
+  lookup_names2  <- unique(data2_prepared$first_secname)
+  lookup_phones <- unique(data2_prepared$phone_clean)
+  
+  # 2. apply matching logic to data1
+  data1 %>%
+    dplyr::mutate(
+      is_in_second_dataset = case_when(
+        # check by id number
+        clean_string(ben_id_number) %in% lookup_ids ~ "yes",
+        
+        # check by phone number using reg_num_phone
+        clean_string(reg_num_phone) %in% lookup_phones ~ "yes",
+        
+        # check by combined name
+        clean_string(ben_name) %in% lookup_names ~ "yes",
+        clean_string(ben_first_surname) %in% lookup_names1 ~ "yes",
+        clean_string(ben_first_secname) %in% lookup_names2 ~ "yes",
+        
+        # default to no if no matches are found
+        TRUE ~ "no"
+      )
+    )
+}
+```
+
+## get standard villages
+
+```{r function-get_standard_villages}
+#' separate villages collapsed by forward slash ("|")
+#'
+#' @param data1 dataframe. ESR/partner data
+#' @param data2 dataframe. registration data
+#'
+#' @returns a dataframe
+#' @importFrom stringr str_extract str_replace_all
+#' @export
+#'
+#' @examples
+#' \dontrun{get_standard_villages(data1 = df_partner, data2 = df_clean)}
+get_standard_villages <- function(data1 = df_partner, data2 = df_clean) {
+  
+  # get unique reference villages and sort by length descending
+  # this ensures long names are matched before substrings
+  villages <- unique(data2$village2)
+  villages_sorted <- villages[order(nchar(villages), decreasing = TRUE)]
+  
+  # escape special characters and collapse for regex
+  village_pattern <- paste(stringr::str_escape(villages_sorted), collapse = "|")
+  
+  data1 %>%
+    # separate rows based on the forward slash
+    # this turns "village1/village2" into two distinct rows
+    tidyr::separate_rows(village, sep = "/") %>%
+    dplyr::mutate(
+      # extract the standard name using the pattern
+      village2 = str_extract(village, regex(village_pattern, ignore_case = TRUE)),
+      # capitalize first letters of village names as per your requirement
+      # this handles slashes if they appear in the result
+      village2 = str_replace_all(village2, "(^|/)([a-z])", function(m) toupper(m))
+    )
+}
+```
+
+## pull kobo data
+
+```{r function-pull_kobo_data}
+#' pull data from kobo API
+#'
+#' @param url character. Kobotoolbox url
+#' @param project_id character. project id
+#' @param token character. project token
+#'
+#' @returns a list
+#' @export
+#'
+#' @examples
+#' \dontrun{pull_kobo_data()}
+pull_kobo_data <- function(
+    url = Sys.getenv("kobo_url"),
+    project_id = Sys.getenv("unocha_id"),
+    token = Sys.getenv("unocha_token")
+    
+){
+  
+  robotoolbox::kobo_setup(url = url, token = token)
+  
+  df <- robotoolbox::kobo_data(project_id)
+  return(df)
+}
+```
+
+## categorize numerics
+
+```{r function-cut_numeri}
+#' categorize numeric cols
+#'
+#' @param x a vector of numeric column
+#' @param breaks numeric vector of breaks
+#' @param labels character vector of labels
+#'
+#' @returns vector
+#' @export
+#'
+#' @examples
+#' cut_numeric(c(1:10), c(-Inf,5, Inf), c("<=5", ">=6"))
+cut_numeric <- function(
+    x, 
+    breaks = c(16, 35, 60, Inf), 
+    labels = c("16 - 35", "35 - 59", ">= 60")
+){
+  out <- cut(
+    x,
+    # 16 is the start, 35 and 60 are the breaks, inf covers everything above
+    breaks = breaks,
+    # labels for the resulting factor
+    labels = labels,
+    # include the lowest value and make intervals right-open [x, y)
+    include.lowest = TRUE,
+    right = FALSE
+  )
+  return(out)
+}
+```
+
+## export gtsummary object to excel workbook
+
+```{r function-export_to_excel_formatted}
+#' Export/write gtsummary output to excel workbook
+#'
+#' @param list_of_objects list of `gtsummary` object
+#' @param file_name character. output filename and associated path
+#'
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{export_to_excel_formatted()} 
+export_to_excel_formatted <- function(
+    list_of_objects,
+    file_name = paste0("UNOCHA_Summary_Report_", Sys.Date(), ".xlsx")
+) {
+  
+  # create the workbook object
+  wb <- openxlsx::createWorkbook()
+  
+  # define styles
+  neg_style <- createStyle(fontColour = "#FF0000", textDecoration = "bold")
+  # style for bolding the row headers (the first column)
+  bold_header_style <- createStyle(textDecoration = "bold")
+  
+  # iterate through the named list
+  purrr::iwalk(list_of_objects, function(obj, sheet_name) {
+    
+    openxlsx::addWorksheet(wb, sheet_name)
+    
+    # conversion logic
+    df_to_write <- if (inherits(obj, "gtsummary")) {
+      as_tibble(obj)
+    } else {
+      as.data.frame(obj)
+    }
+    
+    openxlsx::writeData(wb, sheet_name, df_to_write)
+    
+    # 1. bold the row headers (first column)
+    # rows starts at 2 to skip the excel header row
+    openxlsx::addStyle(
+      wb, 
+      sheet_name, 
+      style = bold_header_style, 
+      cols = 1, 
+      rows = 2:(nrow(df_to_write) + 1), 
+      gridExpand = TRUE
+    )
+    
+    # 2. apply red color coding for negative values
+    openxlsx::conditionalFormatting(
+      wb, 
+      sheet_name, 
+      cols = 1:ncol(df_to_write), 
+      rows = 2:(nrow(df_to_write) + 1), 
+      rule = "< 0", 
+      style = neg_style
+    )
+    
+    openxlsx::setColWidths(wb, sheet_name, cols = 1:ncol(df_to_write), widths = "auto")
+  })
+  
+  openxlsx::saveWorkbook(wb, file = file.path("output", file_name), overwrite = TRUE)
+}
+```
+
+## add a new sheet to existing workbook
+
+```{r function-export_to_excel_appended}
+#' Export a sheet to existing workbook
+#'
+#' @param list_of_objects list of `gtsummary` object
+#' @param sheetname character. worksheet name
+#' @param file_name character. output file name
+#' @param output_dir character. output directory
+#'
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{export_to_excel_appended()}
+export_to_excel_appended <- function(
+    list_of_objects = df_target_p,
+    sheetname = "Target and Registered ESR",
+    file_name = paste0("UNOCHA_Summary_Report_", Sys.Date(), ".xlsx"),
+    output_dir = "output"
+) {
+  
+  # create output dir
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  # build full path safely
+  file_path <- file.path(output_dir, basename(file_name))
+  
+  message("Using file path: ", normalizePath(file_path, mustWork = FALSE))
+  
+  # load existing workbook OR create new
+  if (file.exists(file_path)) {
+    
+    message("Loading existing workbook...")
+    
+    wb <- tryCatch(
+      openxlsx::loadWorkbook(file_path),
+      error = function(e) {
+        message("Failed to load workbook: ", e$message)
+        openxlsx::createWorkbook()
+      }
+    )
+    
+  } else {
+    
+    message("Workbook does not exist. Creating new workbook...")
+    wb <- openxlsx::createWorkbook()
+    
+  }
+  
+  # excel sheet name limit
+  sheetname <- substr(sheetname, 1, 31)
+  
+  # remove existing sheet if present
+  if (sheetname %in% names(wb)) {
+    openxlsx::removeWorksheet(wb, sheetname)
+  }
+  
+  addWorksheet(wb, sheetname)
+  
+  # styles
+  header_style <- createStyle(
+    fontSize = 12,
+    textDecoration = "bold",
+    fontColour = "#0066A1"
+  )
+  
+  bold_row_style <- openxlsx::createStyle(textDecoration = "bold")
+  
+  neg_style <- openxlsx::createStyle(
+    fontColour = "#FF0000",
+    textDecoration = "bold"
+  )
+  
+  current_row <- 1
+  
+  purrr::iwalk(list_of_objects, function(obj, list_name) {
+    
+    df_to_write <- if (inherits(obj, "gtsummary")) {
+      as_tibble(obj)
+    } else {
+      as.data.frame(obj)
+    }
+    
+    # section title
+    openxlsx::writeData(
+      wb,
+      sheet = sheetname,
+      x = list_name,
+      startRow = current_row
+    )
+    
+    openxlsx::addStyle(
+      wb,
+      sheet = sheetname,
+      style = header_style,
+      cols = 1,
+      rows = current_row
+    )
+    
+    current_row <<- current_row + 1
+    
+    # write table
+    openxlsx::writeData(
+      wb,
+      sheet = sheetname,
+      x = df_to_write,
+      startRow = current_row,
+      headerStyle = bold_row_style
+    )
+    
+    # bold first column
+    if (nrow(df_to_write) > 0) {
+      
+      openxlsx::addStyle(
+        wb,
+        sheet = sheetname,
+        style = bold_row_style,
+        cols = 1,
+        rows = (current_row + 1):(current_row + nrow(df_to_write)),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+      
+      openxlsx::conditionalFormatting(
+        wb,
+        sheet = sheetname,
+        cols = 1:ncol(df_to_write),
+        rows = (current_row + 1):(current_row + nrow(df_to_write)),
+        rule = "<0",
+        style = neg_style
+      )
+    }
+    
+    current_row <<- current_row + nrow(df_to_write) + 3
+  })
+  
+  # autofit
+  openxlsx::setColWidths(
+    wb,
+    sheet = sheetname,
+    cols = 1:50,
+    widths = "auto"
+  )
+  
+  # save
+  openxlsx::saveWorkbook(
+    wb,
+    file = file_path,
+    overwrite = TRUE
+  )
+  
+  message("Workbook saved successfully.")
+}
+```
+
+## get duplicates
+
+```{r function-get_duplicates}
+#' get duplicate beneficiaries on select variables
+#'
+#' @param x dataframe
+#' @param vars_to_check character vector of variables to check
+#' @param phone_var character vector. phone number variable for hard check
+#' @param name_var character vector. name of respondent
+#' @importFrom dplyr group_by across n n_distinct filter any_of ungroup distinct
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{get_duplicates()}
+get_duplicates <- function(
+    x,
+    vars_to_check = c("benef_name", "ben_number"),
+    phone_var = "ben_number",
+    name_var = "benef_name"
+){
+  
+  # 1. find phone sharing: same phone, different names
+  phone_sharing <- x %>%
+    group_by(across(any_of(phone_var))) %>%
+    filter(n() > 1 & n_distinct(across(any_of(name_var))) > 1)
+  
+  # 2. find name sharing: same name, different phones
+  name_sharing <- x %>%
+    group_by(across(any_of(name_var))) %>%
+    filter(n() > 1 & n_distinct(across(any_of(phone_var))) > 1)
+  
+  # 3. find exact duplicates across the vars_to_check
+  exact_dups <- x %>%
+    group_by(across(any_of(vars_to_check))) %>%
+    filter(n() > 1)
+  
+  # combine all instances and remove overlapping rows
+  res <- bind_rows(phone_sharing, name_sharing, exact_dups) %>%
+    distinct() %>%
+    ungroup()
+  
+  # sort by the primary variables for easy review
+  res %>%
+    arrange(across(any_of(vars_to_check)))
+}
+```
+
+## get distinct
+
+```{r function-get_distinct}
+#' get distinct beneficiaries on select variables
+#'
+#' @param x dataframe
+#' @param vars_to_check character vector of columns to check
+#' @param phone_var character vector of phone number column
+#' @param name_var character vector of respondent name
+#' @importFrom dplyr group_by across n n_distinct filter any_of ungroup distinct select pull row_number bind_rows 
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{get_distinct()}
+get_distinct <- function(
+    x,
+    vars_to_check = c("benef_name", "ben_number"),
+    phone_var = "ben_number",
+    name_var = "benef_name"
+){
+  # identify the ids or row indices of all duplicates first
+  # we use your duplicate logic to find what to exclude
+  duplicates <- x %>%
+    # use row_number to keep track of exactly which rows are flagged
+    mutate(temp_id = row_number()) %>%
+    {
+      # find rows that fail any of the duplicate checks
+      bind_rows(
+        # scenario 1: shared phone, different names
+        group_by(., across(any_of(phone_var))) %>% 
+          filter(n() > 1 & n_distinct(across(any_of(name_var))) > 1),
+        
+        # scenario 2: shared name, different phones
+        group_by(., across(any_of(name_var))) %>% 
+          filter(n() > 1 & n_distinct(across(any_of(phone_var))) > 1),
+        
+        # scenario 3: exact duplicates
+        group_by(., across(any_of(vars_to_check))) %>% 
+          filter(n() > 1)
+      )
+    } %>%
+    pull(temp_id) %>%
+    unique()
+  
+  # return the original data minus the duplicate rows
+  x %>%
+    mutate(temp_id = row_number()) %>%
+    filter(!(temp_id %in% duplicates)) %>%
+    select(-temp_id)
+}
+```
+
+## plot bar
+
+```{r function-plot_bar}
+#' plot bar graphs
+#'
+#' @param data dataframe
+#' @param x_var character vector x-axis variable
+#' @param y_var character vector y-axis variable
+#' @param fill_col character vector of hex color code for fill
+#' @param title character vector of title
+#' @param subtitle character vector of subtitle
+#' @param x_lab character vector of label for x-axis
+#' @param y_lab character vector of label for y-axis
+#' @importFrom rlang ensym
+#'
+#' @returns list of plot object
+#' @export
+#'
+#' @examples
+#' \dontrun{plot_bar()}
+plot_bar <- function(data, 
+                     x_var, 
+                     y_var = NULL, 
+                     fill_col = "#0066A1",
+                     title = "variable distribution", 
+                     subtitle = NULL, 
+                     x_lab = NULL, 
+                     y_lab = "count") {
+  
+  x_sym <- rlang::ensym(x_var)
+  
+  if (!is.null(y_var)) {
+    y_sym <- ensym(y_var)
+    
+    # case 1: plotting pre-calculated values with percent
+    # we calculate total sum to derive percentages for the labels
+    total_sum <- sum(data[[as_label(y_sym)]], na.rm = TRUE)
+    
+    # p <- ggplot(data, aes(x = fct_reorder(as.factor(!!x_sym), !!y_sym), y = !!y_sym)) +
+    p <- ggplot2::ggplot(data, aes(x = !!x_sym, y = !!y_sym)) +
+      ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+      ggplot2::geom_text(
+        ggplot2::aes(label = paste0(!!y_sym, " (", scales::percent(!!y_sym / total_sum, accuracy = 0.1), ")")),
+        vjust = -0.5, size = 3, fontface = "bold"
+      )
+    
+  } else {
+    # case 2: plotting frequencies with dynamic percent
+    # p <- ggplot(data, aes(x = fct_infreq(as.factor(!!x_sym)))) +
+    p <- ggplot2::ggplot(data, aes(x = !!x_sym)) +
+      ggplot2::geom_bar(fill = fill_col, alpha = 0.9, width = 0.75) +
+      ggplot2::geom_text(
+        stat = "count",
+        ggplot2::aes(label = after_stat(paste0(count, " (", scales::percent(count / sum(count), accuracy = 0.1), ")"))),
+        vjust = -0.5, size = 3, fontface = "bold"
+      )
+  }
+  
+  p <- p +
+    ggplot2::labs(
+      title = title,
+      subtitle = subtitle,
+      x = if(is.null(x_lab)) as_label(x_sym) else x_lab,
+      y = y_lab
+    ) +
+    # expand y axis further to accommodate longer labels
+    ggplot2::scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = "bold", size = 14, color = "#231F20"),
+      plot.subtitle = element_text(size = 11, color = "#58595B"),
+      axis.title = element_text(face = "bold", color = "#231F20"),
+      axis.text.x = element_text(angle = 45, hjust = 1, color = "#231F20"),
+      axis.text.y = element_text(color = "#231F20")
+    )
+  
+  return(p)
+}
+```
+
+## add custom total
+
+```{r function-add_custom_total}
+#' calculate column-wise totals
+#'
+#' @param df dataframe
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{add_custom_total()}
+add_custom_total <- function(df) {
+  # calculate totals
+  totals <- df %>%
+    dplyr::summarise(
+      Village = "Total",
+      # only sum unique targeted values per village to avoid double counting
+      `Targeted BNF` = base::sum(unique(`Targeted BNF`), na.rm = TRUE),
+      `Registered BNF` = sum(`Registered BNF`, na.rm = TRUE),
+      Variance = sum(Variance, na.rm = TRUE),
+      `ESR Households` = sum(`ESR Households`, na.rm = TRUE),
+      partner = NA
+    )
+  
+  # combine with original data
+  out <- bind_rows(df, totals)
+  
+  return(out)
+}
+```
+
+## collapse villages
+
+```{r function-collapse_villages}
+#' collapse villages that share targets, separating by /
+#'
+#' @param df dataframe
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{collapse_villages()}
+collapse_villages <- function(df) {
+  df_collapsed <- df %>%
+    # group by the columns where you want to identify duplicates
+    dplyr::group_by(`Targeted BNF`, `ESR Households`, partner) %>%
+    dplyr::summarise(
+      # collapse village names with a slash
+      village = paste(unique(village), collapse = " / "),
+      # sum the registered beneficiaries
+      `Registered BNF` = sum(`Registered BNF`, na.rm = TRUE),
+      # keep the group order clean
+      .groups = "drop"
+    ) %>%
+    # relocate columns to match your original structure
+    dplyr::select(village, `Targeted BNF`, `ESR Households`, partner, `Registered BNF`)
+  
+  return(df_collapsed)
+}
+```
+
+## find partial matches
+
+```{r function-get_partial_matches}
+#' find partial matches between focal and beneficiary
+#'
+#' @param df dataframe
+#' @param focal character vector of focal variable
+#' @param beneficiary character vector of beneficiary variable
+#'
+#' @returns a dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{get_partial_matches()}
+get_partial_matches <- function(df, focal = "focal_name", beneficiary = "benef_name") {
+  df %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      is_partial = stringr::str_detect(.data[[focal]], fixed(.data[[beneficiary]])) | 
+        stringr::str_detect(.data[[beneficiary]], fixed(.data[[focal]]))
+    ) %>% 
+    dplyr::ungroup()
+}
+```
+
+## get personally identifying columns
+
+```{r function-get_pii}
+#' Get personally identifying columns
+#'
+#' @param df dataframe
+#' @param vars string of identifying columns
+#'
+#' @returns a list of 3 dataframes: identifying, de-identified, and original df
+#' @export
+#'
+#' @examples
+#' \dontrun{get_pii()}
+get_pii <- function(
+    df = df_clean,
+    vars = c("lat", "long", "name", "mobile", "gps", "phone", "enum_num$", "^(enum|reg|ben|proxy|sec)_.*(name|num|id)")
+){
+  cols <- paste(vars, collapse = "|")
+  df_pii <- df %>% select(
+    grep(cols, names(.))
+  )
+  df_depii <- df %>%
+    dplyr::select(
+      -grep(cols, names(.))
+    )
+  out <- list(df_pii, df_depii, df) %>%
+    purrr::set_names(c("personaly-identifying", "de-identified", "original-data"))
+  return(out)
+}
+```
+
+## export a list to excel
+
+```{r}
+#' export a named list of data frames to an excel workbook
+#' @param df_list a named list of data frames
+#' @param file_path character string for the output path
+#' @returns NULL
+#' @export
+#' @examples
+#' \dontrun{write_list_to_excel()}
+write_list_to_excel <- function(df_list, file_path) {
+  
+  # create a new workbook object
+  wb <- openxlsx::createWorkbook()
+  
+  # define a professional header style
+  header_style <- createStyle(
+    fgFill = "#4F81BD", 
+    halign = "center", 
+    textDecoration = "bold",
+    fontColour = "white",
+    border = "bottom"
+  )
+  
+  # iterate through the named list
+  # .x is the dataframe, .y is the name of the list element
+  purrr::iwalk(df_list, function(.x, .y) {
+    
+    # add a new worksheet with the name of the list element
+    # excel sheet names are limited to 31 characters
+    sheet_name <- substr(.y, 1, 31)
+    openxlsx::addWorksheet(wb, sheet_name)
+    
+    # write the data to the sheet
+    openxlsx::writeData(wb, sheet_name, .x, headerStyle = header_style)
+    
+    # adjust column widths to fit content automatically
+    openxlsx::setColWidths(wb, sheet_name, cols = 1:ncol(.x), widths = "auto")
+    
+    # freeze the top row for easier navigation
+    openxlsx::freezePane(wb, sheet_name, firstRow = TRUE)
+  })
+  
+  # save the workbook to the specified path
+  openxlsx::saveWorkbook(wb, file_path, overwrite = TRUE)
+}
+```
+
 
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.
 -->
 
-## Use sub-functions in the same chunk
 
-```{r function-my_other_median}
-#' My Other median
-#'
-#' @param x Vector of Numeric values
-#' @inheritParams stats::median
-#'
-#' @return
-#' Median of vector x
-#' @export
-#'
-#' @examples
-my_other_median <- function(x, na.rm = TRUE) {
-  if (!is.numeric(x)) {
-    stop("x should be numeric")
-  }
-  sub_median(x, na.rm = na.rm)
-}
-
-#' Core of the median not exported
-#' @param x Vector of Numeric values
-#' @inheritParams stats::median
-sub_median <- function(x, na.rm = TRUE) {
-  stats::median(x, na.rm)
-}
-```
-
-```{r examples-my_other_median}
-my_other_median(1:12)
-```
-
-```{r tests-my_other_median}
-test_that("my_median works properly and show error if needed", {
-  expect_true(my_other_median(1:12) == 6.5)
-  expect_error(my_other_median("text"))
-})
-```
 
 <!--
 # There can be development actions

@@ -1,15 +1,34 @@
 Package: acheck
-Version: 0.0.0.9000
 Title: ACTED Data Processing Helpers
-Description: Custom functions for organizing ACTED humanitarian data for analysis.
-Authors@R: person(given = "Basil",
-       family = "Okola",
-       role = c("aut", "cre"),
-       email = "okolabasilowiti@gmail.com",
-       comment = c(ORCID = "0000-0000-0000-0000"))
+Version: 0.0.0.9000
+Authors@R: 
+    person("Basil", "Okola", , "okolabasilowiti@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1047-9700"))
+Description: Custom functions for organizing ACTED humanitarian data for
+    analysis.
 License: MIT + file LICENSE
+Imports: 
+    dplyr,
+    flextable,
+    ggplot2,
+    gtreg,
+    gtsummary,
+    magrittr,
+    officer,
+    openxlsx,
+    purrr,
+    rlang,
+    robotoolbox,
+    scales,
+    stringr,
+    tidyr
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: 
+    knitr
+Config/fusen/version: 0.7.2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
-URL: https://github.com/Bokola/acheck
-BugReports: https://github.com/Bokola/acheck/issues

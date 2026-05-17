@@ -1,0 +1,33 @@
+flat_full.Rmd:
+  path: dev/flat_full.Rmd
+  state: active
+  R:
+  - R/add_gt_to_word.R
+  - R/export_list_to_word.R
+  - R/create_summary_table.R
+  - R/create_listing_table.R
+  - R/clean_string.R
+  - R/clean_camp.R
+  - R/get_standard_villages.R
+  - R/pull_kobo_data.R
+  - R/cut_numeric.R
+  - R/export_to_excel_formatted.R
+  - R/export_to_excel_appended.R
+  - R/get_duplicates.R
+  - R/get_distinct.R
+  - R/plot_bar.R
+  - R/add_custom_total.R
+  - R/collapse_villages.R
+  - R/get_partial_matches.R
+  - R/get_pii.R
+  tests: tests/testthat/test-add_gt_to_word.R
+  vignettes: vignettes/get-started.Rmd
+  inflate:
+    flat_file: dev/flat_full.Rmd
+    vignette_name: Get started
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask
+    clean: ask
+    codecov: false

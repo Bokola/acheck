@@ -19,9 +19,9 @@ fusen::fill_description(
     Title = "ACTED data Processing helpers",
     Description = "Custom functions for organizing ACTED humanitarian data for analysis.",
     `Authors@R` = c(
-      person("Basil", "Okola", email = "okolabasilowiti@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0000-0000-0000"))
+      person("Basil", "Okola", email = "okolabasilowiti@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1047-9700"))
     )
-  )
+  ), overwrite = TRUE
 )
 # Define License with use_*_license()
 usethis::use_mit_license("Basil Okola")
@@ -56,7 +56,7 @@ remotes::install_local()
 # README
 usethis::use_readme_rmd()
 # Code of Conduct
-usethis::use_code_of_conduct("contact@fake.com")
+usethis::use_code_of_conduct("okolabasilowiti@gmail.com")
 # NEWS
 usethis::use_news_md()
 ```
