@@ -8,6 +8,7 @@ flat_full.Rmd:
   - R/create_listing_table.R
   - R/clean_string.R
   - R/clean_camp.R
+  - R/check_esr_registrations.R
   - R/get_standard_villages.R
   - R/pull_kobo_data.R
   - R/cut_numeric.R
@@ -20,6 +21,9 @@ flat_full.Rmd:
   - R/collapse_villages.R
   - R/get_partial_matches.R
   - R/get_pii.R
+  - R/write_list_to_excel.R
+  - R/preprocess_reg.R
+  - R/draw_pps_sample.R
   tests: tests/testthat/test-add_gt_to_word.R
   vignettes: vignettes/get-started.Rmd
   inflate:

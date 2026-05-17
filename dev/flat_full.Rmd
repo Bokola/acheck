@@ -399,7 +399,7 @@ clean_camp <- function(x, col_name = "ben_camp"){
 
 ## find households in ESR data
 
-```{r}
+```{r function-check_esr_registrations}
 # registrations appearing in ESR
 #' Title
 #'
@@ -1082,7 +1082,7 @@ get_pii <- function(
 
 ## export a list to excel
 
-```{r}
+```{r function-write_list_to_excel}
 #' export a named list of data frames to an excel workbook
 #' @param df_list a named list of data frames
 #' @param file_path character string for the output path
@@ -1128,6 +1128,245 @@ write_list_to_excel <- function(df_list, file_path) {
 }
 ```
 
+## pre-process unocha registration
+
+
+```{r function-preprocess_reg}
+#' preprocess unocha registrations
+#'
+#' @param df dataframe
+#' @importFrom dm dm_flatten_to_tbl
+#' @importFrom dplyr mutate group_by case_when if_else filter bind_rows distinct
+#'
+#' @returns a dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{preprocess_reg()}
+#' 
+preprocess_reg <- function(df){
+  df_out <- df %>% 
+  dm_flatten_to_tbl(main)
+
+df_out <- df_out %>%
+  mutate(across(where(labelled::is.labelled), as.character))
+df_out <- df_out %>%
+  dplyr::mutate(
+    village = case_when(
+      grepl("chini", village, ignore.case = T) & grepl(
+        "kalakacha", sublocation, ignore.case = T
+      ) ~ "Kalakacha Chini",
+      TRUE ~ village
+    )
+  )
+df_out <- df_out %>%
+  mutate(
+    village = case_when(
+      grepl("Emmaus|Kirengender", village, ignore.case = T) ~ "Kirengender",
+      grepl("salama|Kajificheni", village, ignore.case = T) ~ "Salama",
+      grepl("kalkacha_juu", village, ignore.case = T) ~ "Kalakacha Juu",
+      TRUE ~ village
+    )
+#     troublesome
+    ,
+    enum_egency = case_when(
+      grepl("mitobini", village, ignore.case = T) &
+      grepl("pgi", enum_egency, ignore.case = T) ~ "ALDEF",
+      # grepl("Milimani", village, ignore.case = T) & 
+      #   date(start) >= date("2026-05-13") ~ "ALDEF",
+      # grepl("kurole", village, ignore.case = T) ~ "ALDEF",
+      grepl("elwachu", village, ignore.case = T) ~ "ALDEF",
+      TRUE ~ enum_egency
+    )
+  )
+
+df_out <- df_out %>% 
+  dplyr::mutate(
+    ben_first_surname = paste(first_name, third_name),
+    ben_first_secname = paste(first_name, second_name)
+  )
+
+df_out <- df_out %>% 
+  dplyr::mutate(
+    HHH_age_calc = if_else(
+      !is.na(resp_age), resp_age, HHH_age
+    )
+  )
+
+df_out <- df_out %>% 
+  mutate(
+    county = gsub("_", " ", county)
+  )
+df_out <- df_out %>%
+  dplyr::mutate(
+    age_category = cut_numeric(HHH_age_calc),
+    hh_size_category = cut_numeric(
+      hh_size,
+      breaks = c(1, 3, 6, 10, Inf),
+      labels = c("1 - 2", "3 - 5", "6 - 9", ">= 10")
+    ),
+    hh_disabl_category = cut_numeric(
+      hh_disability_count,
+      breaks = c(0,1, 3, 5, Inf),
+      labels = c("0", "1 - 2", "3 - 4", ">= 5")
+    )
+  )
+
+  
+df_out <- df_out %>%
+  labelled::set_variable_labels(
+    age_category = "Household\n Head Age",
+    HHH_chronic = "HH Head\n Chronic illness",
+    HHM_chronic = "HH Member\n Chronic illness",
+    average_income = "Monthly Income",
+    hh_size = "Household Size",
+    hh_size_category = "Household Size",
+    FCSGName = "Food Consumption\n Score",
+    eligibility = "Eligibility",
+    enum_egency = "Agency",
+    enum_name = "Enumerator\n first name",
+    first_name = "respondent\n first name",
+    reg_num = "Respondent Phone",
+    trust_proxy = "Trust proxy",
+    enum_egency = "Partner",
+    proxy_num_consent = "proxy consent",
+    name_proxy_first = "proxy\n first name",
+    proxy_num = "proxy mobile",
+    proxy_relation = "proxy relation",
+    HHM_disability = "Household\n disability",
+    HHH_chronic = "Household\nchronic illness"
+  )
+
+# registration started May 3 ----------------------------------------------
+
+df_out <- df_out %>% 
+  dplyr::filter(
+#     start of reg
+    start >= lubridate::date("2026-05-03")
+  ) %>%
+  dplyr::filter(!(start < lubridate::date("2026-05-07") & grepl("SND", enum_egency))) 
+  
+  # distinct(
+  #   ben_name, reg_num, ben_id_number, .keep_all = T
+  # ) %>%
+  # distinct(
+  #   reg_num, ben_id_number, .keep_all = T
+  # ) %>% 
+  
+# reg_num can be NA but distinct() would only pick one row
+
+df_clean <- df_out %>%
+  filter(is.na(reg_num)) %>%
+  bind_rows(
+    df_out %>%
+      filter(!is.na(reg_num)) %>%
+      distinct(reg_num, .keep_all = TRUE)
+  ) %>%
+  mutate(
+    village = gsub("_", " ", village),
+    county = gsub("_", " ", county)
+  )
+
+}
+```
+
+
+## Proportional to size random sample
+
+```{r function-draw_pps_sample}
+#' Draw a Sample of Households Proportional to Village Size
+#'
+#' This function selects a stratified random sample of individual household rows 
+#' from within counties. The probability of a household being selected is 
+#' proportional to the total size (household count) of the village it belongs to.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var The bare or quoted column name identifying the county stratum.
+#' @param village_id_var The bare or quoted column name identifying the unique village.
+#' @param allocation_df A data frame containing two columns: the county identifier 
+#'   and the allocated household sample size for that county.
+#' @param alloc_size_var The bare or quoted column name in `allocation_df` 
+#'   indicating the target sample size.
+#' @param seed An integer value used to initialize the pseudo-random number generator 
+#'   for reproducible sampling. Defaults to `42`.
+#'
+#' @return A data frame containing the individually selected household rows.
+#'
+#' @importFrom dplyr group_by mutate ungroup inner_join arrange row_number filter across any_of desc n
+#' @importFrom rlang sym
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # dummy raw household data
+#' raw_households <- data.frame(
+#'   county_id = rep(c("County_A", "County_B"), each = 10),
+#'   village_id = c(rep("V1", 3), rep("V2", 7), rep("V3", 4), rep("V4", 6)),
+#'   household_id = paste0("HH_", 1:20)
+#' )
+#'
+#' # household sample size targets per county
+#' target_allocations <- data.frame(
+#'   county_id = c("County_A", "County_B"),
+#'   sample_size = c(2, 3)
+#' )
+#'
+#' # run reproducible pps household sampling
+#' pps_household_sample <- draw_pps_sample(
+#'   data = raw_households,
+#'   county_var = "county_id",
+#'   village_id_var = "village_id",
+#'   allocation_df = target_allocations,
+#'   alloc_size_var = "sample_size",
+#'   seed = 123
+#' )
+#' }
+draw_pps_sample <- function(
+    data, 
+    county_var = "county", 
+    village_id_var = "village", 
+    allocation_df,
+    alloc_size_var = "sample",
+    seed = as.numeric(Sys.Date())
+) {
+  
+  # preserve global environment random seed state if it exists
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv))
+  }
+  
+  # set the pseudo-random seed state for this execution context
+  set.seed(seed)
+  
+  # calculate village size and append it back to every household row natively
+  household_weights <- data %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(c(county_var, village_id_var)))) %>%
+    dplyr::mutate(village_size = dplyr::n()) %>%
+    dplyr::ungroup()
+  
+  # join the target household allocations per county
+  joined_frame <- dplyr::inner_join(
+    household_weights, 
+    allocation_df, 
+    by = rlang::set_names(county_var, county_var)
+  )
+  
+  # generate a uniform random component combined with size weights for pps without replacement
+  # then slice the top target records per county grouping
+  sampled_households <- joined_frame %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(county_var))) %>%
+    dplyr::mutate(
+      rand_weight = stats::runif(dplyr::n())^(1 / .data$village_size)
+    ) %>%
+    dplyr::arrange(dplyr::desc(.data$rand_weight), .by_groups = TRUE) %>%
+    dplyr::filter(dplyr::row_number() <= unique(!!rlang::sym(alloc_size_var))) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$rand_weight)
+  
+  return(sampled_households)
+}
+```
 
 <!--
 There can be other functions, examples and tests in your flat template.

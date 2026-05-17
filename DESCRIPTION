@@ -8,11 +8,14 @@ Description: Custom functions for organizing ACTED humanitarian data for
     analysis.
 License: MIT + file LICENSE
 Imports: 
+    dm,
     dplyr,
     flextable,
     ggplot2,
     gtreg,
     gtsummary,
+    labelled,
+    lubridate,
     magrittr,
     officer,
     openxlsx,
@@ -20,6 +23,7 @@ Imports:
     rlang,
     robotoolbox,
     scales,
+    stats,
     stringr,
     tidyr
 Suggests: 

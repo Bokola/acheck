@@ -30,7 +30,7 @@ A curated collection of reusable **R helper functions** for:
 ## 🚀 Installation
 
 ```r
-source("00_helpers.R")
+pak::pkg_install("bokola/acheck")
 ```
 
 ---
