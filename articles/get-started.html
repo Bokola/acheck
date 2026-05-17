@@ -165,58 +165,6 @@ After inflating the template
 <div class="section level3">
 <h3 id="find-households-in-esr-data">find households in ESR data<a class="anchor" aria-label="anchor" href="#find-households-in-esr-data"></a>
 </h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># registrations appearing in ESR</span></span>
-<span><span class="co">#' Title</span></span>
-<span><span class="co">#'</span></span>
-<span><span class="co">#' @param data1 dataframe. registration data</span></span>
-<span><span class="co">#' @param data2 dataframe. ESR data</span></span>
-<span><span class="co">#'</span></span>
-<span><span class="co">#' @returns a dataframe</span></span>
-<span><span class="co">#' @export</span></span>
-<span><span class="co">#'</span></span>
-<span><span class="co">#' @examples</span></span>
-<span><span class="co">#' \dontrun{check_esr_registrations(data1 = df_clean, data2 = df_esr)}</span></span>
-<span><span class="va">check_esr_registrations</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data1</span> <span class="op">=</span> <span class="va">df_clean</span>, <span class="va">data2</span> <span class="op">=</span> <span class="va">df_esr</span><span class="op">)</span> <span class="op">{</span></span>
-<span></span>
-<span>  </span>
-<span>  <span class="co"># 1. prepare lookup keys from data2</span></span>
-<span>  <span class="co"># combine names and clean id and phone for matching</span></span>
-<span>  <span class="va">data2_prepared</span> <span class="op">&lt;-</span> <span class="va">data2</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>      full_name_clean <span class="op">=</span> <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">first_name</span>, <span class="va">middle_name</span>, <span class="va">last_name</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>      first_surname <span class="op">=</span> <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">first_name</span>, <span class="va">last_name</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>      first_secname <span class="op">=</span> <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">first_name</span>, <span class="va">middle_name</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>      id_clean        <span class="op">=</span> <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">id_number1</span><span class="op">)</span>,</span>
-<span>      phone_clean     <span class="op">=</span> <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">phone_number</span><span class="op">)</span></span>
-<span>    <span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="va">lookup_ids</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data2_prepared</span><span class="op">$</span><span class="va">id_clean</span><span class="op">)</span></span>
-<span>  <span class="va">lookup_names</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data2_prepared</span><span class="op">$</span><span class="va">full_name_clean</span><span class="op">)</span></span>
-<span>  <span class="va">lookup_names1</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data2_prepared</span><span class="op">$</span><span class="va">first_surname</span><span class="op">)</span></span>
-<span>  <span class="va">lookup_names2</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data2_prepared</span><span class="op">$</span><span class="va">first_secname</span><span class="op">)</span></span>
-<span>  <span class="va">lookup_phones</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data2_prepared</span><span class="op">$</span><span class="va">phone_clean</span><span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="co"># 2. apply matching logic to data1</span></span>
-<span>  <span class="va">data1</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>      is_in_second_dataset <span class="op">=</span> <span class="fu">case_when</span><span class="op">(</span></span>
-<span>        <span class="co"># check by id number</span></span>
-<span>        <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">ben_id_number</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">lookup_ids</span> <span class="op">~</span> <span class="st">"yes"</span>,</span>
-<span>        </span>
-<span>        <span class="co"># check by phone number using reg_num_phone</span></span>
-<span>        <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">reg_num_phone</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">lookup_phones</span> <span class="op">~</span> <span class="st">"yes"</span>,</span>
-<span>        </span>
-<span>        <span class="co"># check by combined name</span></span>
-<span>        <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">ben_name</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">lookup_names</span> <span class="op">~</span> <span class="st">"yes"</span>,</span>
-<span>        <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">ben_first_surname</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">lookup_names1</span> <span class="op">~</span> <span class="st">"yes"</span>,</span>
-<span>        <span class="fu"><a href="../reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="va">ben_first_secname</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">lookup_names2</span> <span class="op">~</span> <span class="st">"yes"</span>,</span>
-<span>        </span>
-<span>        <span class="co"># default to no if no matches are found</span></span>
-<span>        <span class="cn">TRUE</span> <span class="op">~</span> <span class="st">"no"</span></span>
-<span>      <span class="op">)</span></span>
-<span>    <span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="get-standard-villages">get standard villages<a class="anchor" aria-label="anchor" href="#get-standard-villages"></a>
@@ -269,50 +217,14 @@ After inflating the template
 <div class="section level3">
 <h3 id="export-a-list-to-excel">export a list to excel<a class="anchor" aria-label="anchor" href="#export-a-list-to-excel"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#' export a named list of data frames to an excel workbook</span></span>
-<span><span class="co">#' @param df_list a named list of data frames</span></span>
-<span><span class="co">#' @param file_path character string for the output path</span></span>
-<span><span class="co">#' @returns NULL</span></span>
-<span><span class="co">#' @export</span></span>
-<span><span class="co">#' @examples</span></span>
-<span><span class="co">#' \dontrun{write_list_to_excel()}</span></span>
-<span><span class="va">write_list_to_excel</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df_list</span>, <span class="va">file_path</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  </span>
-<span>  <span class="co"># create a new workbook object</span></span>
-<span>  <span class="va">wb</span> <span class="op">&lt;-</span> <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/createWorkbook.html" class="external-link">createWorkbook</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="co"># define a professional header style</span></span>
-<span>  <span class="va">header_style</span> <span class="op">&lt;-</span> <span class="fu">createStyle</span><span class="op">(</span></span>
-<span>    fgFill <span class="op">=</span> <span class="st">"#4F81BD"</span>, </span>
-<span>    halign <span class="op">=</span> <span class="st">"center"</span>, </span>
-<span>    textDecoration <span class="op">=</span> <span class="st">"bold"</span>,</span>
-<span>    fontColour <span class="op">=</span> <span class="st">"white"</span>,</span>
-<span>    border <span class="op">=</span> <span class="st">"bottom"</span></span>
-<span>  <span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="co"># iterate through the named list</span></span>
-<span>  <span class="co"># .x is the dataframe, .y is the name of the list element</span></span>
-<span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">df_list</span>, <span class="kw">function</span><span class="op">(</span><span class="va">.x</span>, <span class="va">.y</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    </span>
-<span>    <span class="co"># add a new worksheet with the name of the list element</span></span>
-<span>    <span class="co"># excel sheet names are limited to 31 characters</span></span>
-<span>    <span class="va">sheet_name</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">.y</span>, <span class="fl">1</span>, <span class="fl">31</span><span class="op">)</span></span>
-<span>    <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/addWorksheet.html" class="external-link">addWorksheet</a></span><span class="op">(</span><span class="va">wb</span>, <span class="va">sheet_name</span><span class="op">)</span></span>
-<span>    </span>
-<span>    <span class="co"># write the data to the sheet</span></span>
-<span>    <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/writeData.html" class="external-link">writeData</a></span><span class="op">(</span><span class="va">wb</span>, <span class="va">sheet_name</span>, <span class="va">.x</span>, headerStyle <span class="op">=</span> <span class="va">header_style</span><span class="op">)</span></span>
-<span>    </span>
-<span>    <span class="co"># adjust column widths to fit content automatically</span></span>
-<span>    <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/setColWidths.html" class="external-link">setColWidths</a></span><span class="op">(</span><span class="va">wb</span>, <span class="va">sheet_name</span>, cols <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">.x</span><span class="op">)</span>, widths <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
-<span>    </span>
-<span>    <span class="co"># freeze the top row for easier navigation</span></span>
-<span>    <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/freezePane.html" class="external-link">freezePane</a></span><span class="op">(</span><span class="va">wb</span>, <span class="va">sheet_name</span>, firstRow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="co"># save the workbook to the specified path</span></span>
-<span>  <span class="fu">openxlsx</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/openxlsx/man/saveWorkbook.html" class="external-link">saveWorkbook</a></span><span class="op">(</span><span class="va">wb</span>, <span class="va">file_path</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pre-process-unocha-registration">pre-process unocha registration<a class="anchor" aria-label="anchor" href="#pre-process-unocha-registration"></a>
+</h3>
+</div>
+<div class="section level3">
+<h3 id="proportional-to-size-random-sample">Proportional to size random sample<a class="anchor" aria-label="anchor" href="#proportional-to-size-random-sample"></a>
+</h3>
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.

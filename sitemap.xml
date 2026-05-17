@@ -10,12 +10,14 @@
 <url><loc>/reference/acheck-package.html</loc></url>
 <url><loc>/reference/add_custom_total.html</loc></url>
 <url><loc>/reference/add_gt_to_word.html</loc></url>
+<url><loc>/reference/check_esr_registrations.html</loc></url>
 <url><loc>/reference/clean_camp.html</loc></url>
 <url><loc>/reference/clean_string.html</loc></url>
 <url><loc>/reference/collapse_villages.html</loc></url>
 <url><loc>/reference/create_listing_table.html</loc></url>
 <url><loc>/reference/create_summary_table.html</loc></url>
 <url><loc>/reference/cut_numeric.html</loc></url>
+<url><loc>/reference/draw_pps_sample.html</loc></url>
 <url><loc>/reference/export_list_to_word.html</loc></url>
 <url><loc>/reference/export_to_excel_appended.html</loc></url>
 <url><loc>/reference/export_to_excel_formatted.html</loc></url>
@@ -27,6 +29,8 @@
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/pipe.html</loc></url>
 <url><loc>/reference/plot_bar.html</loc></url>
+<url><loc>/reference/preprocess_reg.html</loc></url>
 <url><loc>/reference/pull_kobo_data.html</loc></url>
+<url><loc>/reference/write_list_to_excel.html</loc></url>
 </urlset>
 
