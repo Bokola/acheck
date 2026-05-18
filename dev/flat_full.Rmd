@@ -1457,7 +1457,7 @@ draw_pps_sample <- function(
 
 ## proportional to size sample Hamilton redistribution
 
-```{r function-draw_pps_sample_hamilton}
+```{r function-draw_pps_hamilton}
 #' Draw a Sample of Households Proportional to Village Size
 #'
 #' This function selects a stratified random sample of individual household rows
@@ -1543,7 +1543,7 @@ draw_pps_sample <- function(
 #'   min_village_sample = 8L
 #' )
 #' }
-draw_pps_sample_hamilton <- function(
+draw_pps_hamilton <- function(
     data,
     county_var         = "county",
     village_id_var     = "village",

@@ -85,7 +85,7 @@
 #'   min_village_sample = 8L
 #' )
 #' }
-draw_pps_sample_hamilton <- function(
+draw_pps_hamilton <- function(
     data,
     county_var         = "county",
     village_id_var     = "village",
