@@ -10,56 +10,95 @@ draw_pps_sample(
   village_id_var = "village",
   allocation_df,
   alloc_size_var = "sample",
-  seed = as.numeric(Sys.Date())
+  seed = as.numeric(Sys.Date()),
+  min_village_sample = 8L
 )
 }
 \arguments{
 \item{data}{A data frame containing raw household-level records.}
 
-\item{county_var}{The bare or quoted column name identifying the county stratum.}
+\item{county_var}{A bare or quoted column name identifying the county stratum.}
 
-\item{village_id_var}{The bare or quoted column name identifying the unique village.}
+\item{village_id_var}{A bare or quoted column name identifying the unique village.}
 
 \item{allocation_df}{A data frame containing two columns: the county identifier
 and the allocated household sample size for that county.}
 
-\item{alloc_size_var}{The bare or quoted column name in \code{allocation_df}
-indicating the target sample size.}
+\item{alloc_size_var}{A bare or quoted column name in \code{allocation_df}
+indicating the target sample size for each county.}
 
-\item{seed}{An integer value used to initialize the pseudo-random number generator
-for reproducible sampling. Defaults to \code{42}.}
+\item{seed}{An integer used to initialise the pseudo-random number generator
+for reproducible sampling. Defaults to the numeric representation of the
+current system date.}
+
+\item{min_village_sample}{A single integer specifying the minimum number of
+households that must be sampled from any village. Villages initially allocated
+fewer than this value borrow units from the most oversampled villages in the
+same county. The effective minimum is capped at the village's actual household
+count, so small villages are never over-sampled. Defaults to \code{8L}.}
 }
 \value{
-A data frame containing the individually selected household rows.
+A data frame with the same columns as \code{data}, containing only the
+selected household rows. Villages with a final allocation of zero are excluded
+from the output entirely.
 }
 \description{
 This function selects a stratified random sample of individual household rows
 from within counties. The probability of a household being selected is
-proportional to the total size (household count) of the village it belongs to.
+proportional to the total size (household count) of the village it belongs to,
+using the Hamilton (largest remainder) method for allocation. After initial
+allocation, any village falling below \code{min_village_sample} has its
+allocation lifted to the minimum by borrowing units from the most oversampled
+donor villages within the same county.
+}
+\details{
+\strong{Allocation (step 1 — Hamilton / largest remainder):}
+For each county, each village receives a proportional raw allocation
+\eqn{n_v = N_{county} \times (s_v / S_{county})}, where \eqn{s_v} is the
+village household count and \eqn{S_{county}} is the county total. Allocations
+are floored and fractional remainders are distributed one unit at a time to the
+villages with the largest fractional parts until the county target is met.
+
+\strong{Redistribution (step 2 — minimum floor):}
+Redistribution is performed independently within each county. Donor villages —
+those whose allocation exceeds their own effective minimum — are sorted in
+descending order of surplus and drained greedily until the total deficit of
+sub-minimum villages is recovered or the donor pool is exhausted. A
+\code{\link[base]{warning}} is issued when a county cannot fully satisfy the
+minimum for all its villages.
+
+\strong{Sampling (step 3):}
+Within each village, households are drawn via simple random sampling without
+replacement using \code{\link[dplyr]{slice_sample}}. Villages with a final
+allocation of zero are silently dropped.
 }
 \examples{
 \dontrun{
 # dummy raw household data
 raw_households <- data.frame(
-  county_id = rep(c("County_A", "County_B"), each = 10),
+  county_id  = rep(c("County_A", "County_B"), each = 10),
   village_id = c(rep("V1", 3), rep("V2", 7), rep("V3", 4), rep("V4", 6)),
   household_id = paste0("HH_", 1:20)
 )
 
 # household sample size targets per county
 target_allocations <- data.frame(
-  county_id = c("County_A", "County_B"),
-  sample_size = c(2, 3)
+  county_id   = c("County_A", "County_B"),
+  sample_size = c(20, 25)
 )
 
-# run reproducible pps household sampling
+# run reproducible PPS household sampling with an 8-household village minimum
 pps_household_sample <- draw_pps_sample(
-  data = raw_households,
-  county_var = "county_id",
-  village_id_var = "village_id",
-  allocation_df = target_allocations,
-  alloc_size_var = "sample_size",
-  seed = 123
+  data               = raw_households,
+  county_var         = "county_id",
+  village_id_var     = "village_id",
+  allocation_df      = target_allocations,
+  alloc_size_var     = "sample_size",
+  seed               = 123,
+  min_village_sample = 8L
 )
 }
+}
+\seealso{
+\code{\link[dplyr]{slice_sample}}, \code{\link[dplyr]{group_modify}}
 }
