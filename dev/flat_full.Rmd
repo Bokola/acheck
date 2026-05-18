@@ -1455,6 +1455,210 @@ draw_pps_sample <- function(
 
 ```
 
+## proportional to size sample Hamilton redistribution
+
+```{r function-draw_pps_sample_hamilton}
+#' Draw a Sample of Households Proportional to Village Size
+#'
+#' This function selects a stratified random sample of individual household rows
+#' from within counties. The probability of a household being selected is
+#' proportional to the total size (household count) of the village it belongs to,
+#' using the Hamilton (largest remainder) method for allocation. After initial
+#' allocation, any village falling below \code{min_village_sample} has its
+#' allocation lifted to the minimum by borrowing units from the most oversampled
+#' donor villages within the same county.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var A bare or quoted column name identifying the county stratum.
+#' @param village_id_var A bare or quoted column name identifying the unique village.
+#' @param allocation_df A data frame containing two columns: the county identifier
+#'   and the allocated household sample size for that county.
+#' @param alloc_size_var A bare or quoted column name in \code{allocation_df}
+#'   indicating the target sample size for each county.
+#' @param seed An integer used to initialise the pseudo-random number generator
+#'   for reproducible sampling. Defaults to the numeric representation of the
+#'   current system date.
+#' @param min_village_sample A single integer specifying the minimum number of
+#'   households that must be sampled from any village. Villages initially allocated
+#'   fewer than this value borrow units from the most oversampled villages in the
+#'   same county. The effective minimum is capped at the village's actual household
+#'   count, so small villages are never over-sampled. Defaults to \code{8L}.
+#'
+#' @return A data frame with the same columns as \code{data}, containing only the
+#'   selected household rows. Villages with a final allocation of zero are excluded
+#'   from the output entirely.
+#'
+#' @details
+#' \strong{Allocation (step 1 — Hamilton / largest remainder):}
+#' For each county, each village receives a proportional raw allocation
+#' \eqn{n_v = N_{county} \times (s_v / S_{county})}, where \eqn{s_v} is the
+#' village household count and \eqn{S_{county}} is the county total. Allocations
+#' are floored and fractional remainders are distributed one unit at a time to the
+#' villages with the largest fractional parts until the county target is met.
+#'
+#' \strong{Redistribution (step 2 — minimum floor):}
+#' Redistribution is performed independently within each county. Donor villages —
+#' those whose allocation exceeds their own effective minimum — are sorted in
+#' descending order of surplus and drained greedily until the total deficit of
+#' sub-minimum villages is recovered or the donor pool is exhausted. A
+#' \code{\link[base]{warning}} is issued when a county cannot fully satisfy the
+#' minimum for all its villages.
+#'
+#' \strong{Sampling (step 3):}
+#' Within each village, households are drawn via simple random sampling without
+#' replacement using random uniform ordering. Villages with a final
+#' allocation of zero are silently dropped.
+#'
+#' @seealso \code{\link[dplyr]{slice_sample}}, \code{\link[dplyr]{group_modify}}
+#'
+#' @importFrom dplyr count across any_of left_join group_by mutate ungroup group_modify filter arrange row_number select
+#' @importFrom rlang .data sym !!
+#' @importFrom stats runif
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # dummy raw household data
+#' raw_households <- data.frame(
+#'   county_id  = rep(c("County_A", "County_B"), each = 10),
+#'   village_id = c(rep("V1", 3), rep("V2", 7), rep("V3", 4), rep("V4", 6)),
+#'   household_id = paste0("HH_", 1:20)
+#' )
+#'
+#' # household sample size targets per county
+#' target_allocations <- data.frame(
+#'   county_id   = c("County_A", "County_B"),
+#'   sample_size = c(20, 25)
+#' )
+#'
+#' # run reproducible PPS household sampling with an 8-household village minimum
+#' pps_household_sample <- draw_pps_sample(
+#'   data               = raw_households,
+#'   county_var         = "county_id",
+#'   village_id_var     = "village_id",
+#'   allocation_df      = target_allocations,
+#'   alloc_size_var     = "sample_size",
+#'   seed               = 123,
+#'   min_village_sample = 8L
+#' )
+#' }
+draw_pps_sample_hamilton <- function(
+    data,
+    county_var         = "county",
+    village_id_var     = "village",
+    allocation_df,
+    alloc_size_var     = "sample",
+    seed               = as.numeric(Sys.Date()),
+    min_village_sample = 8L
+) {
+  
+  # preserve random seed state if it exists to maintain reproducibility safely
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv))
+  }
+  
+  set.seed(seed)
+  
+  # convert input column names safely to standard strings
+  county_str <- as.character(substitute(county_var))
+  if (!county_str %in% names(data)) county_str <- county_var
+  
+  village_str <- as.character(substitute(village_id_var))
+  if (!village_str %in% names(data)) village_str <- village_id_var
+  
+  # hamilton pps allocation
+  village_alloc <- data %>%
+    dplyr::count(
+      dplyr::across(dplyr::any_of(c(county_str, village_str))),
+      name = "village_size"
+    ) %>%
+    dplyr::left_join(allocation_df, by = county_str) %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(county_str))) %>%
+    dplyr::mutate(
+      county_total = sum(.data$village_size),
+      raw_alloc    = .data[[alloc_size_var]] * .data$village_size / .data$county_total,
+      sample_alloc = floor(.data$raw_alloc),
+      remainder    = .data[[alloc_size_var]][1] - sum(floor(.data$raw_alloc)),
+      frac         = .data$raw_alloc - floor(.data$raw_alloc),
+      sample_alloc = .data$sample_alloc +
+        ifelse(rank(-.data$frac, ties.method = "first") <= .data$remainder, 1L, 0L)
+    ) %>%
+    dplyr::ungroup()
+  
+  # minimum size redistribution
+  village_alloc <- village_alloc %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(county_str))) %>%
+    dplyr::group_modify(function(county_df, key) {
+      
+      alloc   <- county_df$sample_alloc
+      
+      # enforce the floor to be exactly min_village_sample capped at available population
+      eff_min <- pmin(min_village_sample, county_df$village_size)
+      
+      deficit_idx <- which(alloc < eff_min)
+      if (length(deficit_idx) == 0L) return(county_df)
+      
+      deficit        <- eff_min[deficit_idx] - alloc[deficit_idx]
+      total_deficit  <- sum(deficit)
+      surplus        <- pmax(alloc - eff_min, 0L)
+      total_surplus  <- sum(surplus)
+      
+      if (total_surplus == 0L) {
+        warning(
+          "County '", key[[1]], "': not enough surplus to satisfy minimum of ",
+          min_village_sample, " for all villages. Lifting as much as possible."
+        )
+      }
+      
+      donor_order <- order(-surplus)
+      remaining   <- min(total_deficit, total_surplus)
+      
+      for (i in donor_order) {
+        if (remaining <= 0L) break
+        give      <- min(surplus[i], remaining)
+        alloc[i]  <- alloc[i] - give
+        remaining <- remaining - give
+      }
+      
+      recovered <- min(total_deficit, total_surplus)
+      for (j in seq_along(deficit_idx)) {
+        if (recovered <= 0L) break
+        give                  <- min(deficit[j], recovered)
+        alloc[deficit_idx[j]] <- alloc[deficit_idx[j]] + give
+        recovered             <- recovered - give
+      }
+      
+      county_df$sample_alloc <- alloc
+      county_df
+    }) %>%
+    dplyr::ungroup()
+  
+  # sample households within each village
+  # join final target allocation boundaries back to full population dataset rows
+  joined_data <- data %>%
+    dplyr::left_join(
+      dplyr::select(village_alloc, dplyr::any_of(c(county_str, village_str, "sample_alloc"))),
+      by = c(county_str, village_str)
+    )
+  
+  # shuffle and slice rows matching exact targets without using group modify
+  sampled <- joined_data %>%
+    dplyr::filter(!is.na(.data$sample_alloc) & .data$sample_alloc > 0L) %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(c(county_str, village_str)))) %>%
+    dplyr::mutate(rand_draw_order = stats::runif(dplyr::n())) %>%
+    dplyr::arrange(.data$rand_draw_order, .by_groups = TRUE) %>%
+    dplyr::filter(dplyr::row_number() <= .data$sample_alloc) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-dplyr::any_of(c("sample_alloc", "rand_draw_order")))
+  
+  return(sampled)
+}
+
+```
+
+
 ## Stratified sampling
 
 ```{r function-draw_strs_sample}

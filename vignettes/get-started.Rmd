@@ -134,6 +134,9 @@ After inflating the template
 
 ## Proportional to size random sample
 
+## proportional to size sample Hamilton redistribution
+
+
 ## Stratified sampling
 
 

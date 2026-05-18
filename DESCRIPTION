@@ -23,6 +23,7 @@ Imports:
     rlang,
     robotoolbox,
     scales,
+    stats,
     stringr,
     tidyr
 Suggests: 

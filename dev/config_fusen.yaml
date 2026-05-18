@@ -24,6 +24,7 @@ flat_full.Rmd:
   - R/write_list_to_excel.R
   - R/preprocess_reg.R
   - R/draw_pps_sample.R
+  - R/draw_pps_sample_hamilton.R
   - R/draw_strs_sample.R
   - R/draw_cluster_sample.R
   - R/draw_systematic_across_villages.R
