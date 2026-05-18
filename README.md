@@ -36,11 +36,13 @@
 - [Dependencies](#dependencies)
   - [👨‍💻 Author Notes](#man_technologist-author-notes)
 
-<style>
-body {font-family: 'Segoe UI', sans-serif;}
-h1,h2,h3 {color:#0066A1;}
-pre {background:#f8f9fa; border-left:4px solid #0066A1;}
-</style>
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/Bokola/acheck/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Bokola/acheck/actions/workflows/R-CMD-check.yaml)
+[![codecov](https://codecov.io/gh/Bokola/acheck/branch/main/graph/badge.svg)](https://codecov.io/gh/Bokola/acheck)
+<!-- badges: end --> <style> body {font-family: ‘Segoe UI’, sans-serif;}
+h1,h2,h3 {color:#0066A1;} pre {background:#f8f9fa; border-left:4px solid
+\#0066A1;} </style>
 
 # 📦 UNOCHA Helper Functions Toolkit
 

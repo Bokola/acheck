@@ -23,12 +23,9 @@ Imports:
     rlang,
     robotoolbox,
     scales,
-    stats,
     stringr,
     tidyr
 Suggests: 
-    DiagrammeR,
-    DiagrammeRsvg,
     knitr,
     rmarkdown,
     testthat

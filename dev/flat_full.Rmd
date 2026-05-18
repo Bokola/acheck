@@ -1322,51 +1322,555 @@ df_clean <- df_out %>%
 #' )
 #' }
 draw_pps_sample <- function(
-    data, 
-    county_var = "county", 
-    village_id_var = "village", 
+    data,
+    county_var = "county",
+    village_id_var = "village",
     allocation_df,
     alloc_size_var = "sample",
     seed = as.numeric(Sys.Date())
-) {
-  
-  # preserve global environment random seed state if it exists
-  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-    on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv))
-  }
-  
-  # set the pseudo-random seed state for this execution context
+){
+
   set.seed(seed)
-  
-  # calculate village size and append it back to every household row natively
-  household_weights <- data %>%
-    dplyr::group_by(dplyr::across(dplyr::any_of(c(county_var, village_id_var)))) %>%
-    dplyr::mutate(village_size = dplyr::n()) %>%
-    dplyr::ungroup()
-  
-  # join the target household allocations per county
-  joined_frame <- dplyr::inner_join(
-    household_weights, 
-    allocation_df, 
-    by = rlang::set_names(county_var, county_var)
-  )
-  
-  # generate a uniform random component combined with size weights for pps without replacement
-  # then slice the top target records per county grouping
-  sampled_households <- joined_frame %>%
-    dplyr::group_by(dplyr::across(dplyr::any_of(county_var))) %>%
-    dplyr::mutate(
-      rand_weight = stats::runif(dplyr::n())^(1 / .data$village_size)
+
+  # village household counts
+  village_alloc <- data %>%
+    dplyr::count(
+      across(any_of(c(county_var, village_id_var))),
+      name = "village_size"
     ) %>%
-    dplyr::arrange(dplyr::desc(.data$rand_weight), .by_groups = TRUE) %>%
-    dplyr::filter(dplyr::row_number() <= unique(!!rlang::sym(alloc_size_var))) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-.data$rand_weight)
-  
-  return(sampled_households)
+    dplyr::left_join(
+      allocation_df,
+      by = county_var
+    ) %>%
+    dplyr::group_by(across(any_of(county_var))) %>%
+    dplyr::mutate(
+      county_total = sum(village_size),
+
+      raw_alloc =
+        .data[[alloc_size_var]] *
+        village_size / county_total,
+
+      sample_alloc = floor(raw_alloc),
+
+      remainder =
+        first(.data[[alloc_size_var]]) -
+        sum(sample_alloc),
+
+      frac = raw_alloc - floor(raw_alloc),
+
+      sample_alloc =
+        sample_alloc +
+        ifelse(
+          rank(-frac, ties.method = "first") <= remainder,
+          1,
+          0
+        )
+    ) %>%
+    dplyr::ungroup()
+
+  # household sampling inside villages
+  sampled <- data %>%
+    dplyr::left_join(
+      village_alloc,
+      by = c(county_var, village_id_var)
+    ) %>%
+    dplyr::group_by(
+      across(any_of(c(county_var, village_id_var)))
+    ) %>%
+    dplyr::slice_sample(
+      n = first(sample_alloc)
+    ) %>%
+    dplyr::ungroup()
+
+  sampled
 }
 ```
+
+## Stratified sampling
+
+```{r function-draw_strs_sample}
+#' Draw a Stratified Simple Random Sample of Households
+#'
+#' This function selects a stratified simple random sample of individual household 
+#' rows from within counties. Every household within a given county has an equal 
+#' probability of selection, independent of village size.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var The bare or quoted column name identifying the county stratum.
+#' @param allocation_df A data frame containing two columns: the county identifier 
+#'   and the allocated household sample size for that county.
+#' @param alloc_size_var The bare or quoted column name in `allocation_df` 
+#'   indicating the target sample size.
+#' @param seed An integer value used to initialize the pseudo-random number generator 
+#'   for reproducible sampling. Defaults to `42`.
+#'
+#' @return A data frame containing the individually selected household rows.
+#'
+#' @importFrom dplyr group_by mutate ungroup inner_join arrange row_number filter across any_of desc n
+#' @importFrom rlang sym
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # dummy raw household data
+#' raw_households <- data.frame(
+#'   county_id = rep(c("County_A", "County_B"), each = 10),
+#'   village_id = c(rep("V1", 3), rep("V2", 7), rep("V3", 4), rep("V4", 6)),
+#'   household_id = paste0("HH_", 1:20)
+#' )
+#'
+#' # household sample size targets per county
+#' target_allocations <- data.frame(
+#'   county_id = c("County_A", "County_B"),
+#'   sample_size = c(2, 3)
+#' )
+#'
+#' # run reproducible stratified simple random sampling
+#' strs_sample <- draw_strs_sample(
+#'   data = raw_households,
+#'   county_var = "county_id",
+#'   allocation_df = target_allocations,
+#'   alloc_size_var = "sample_size",
+#'   seed = 123
+#' )
+#' }
+draw_strs_sample <- function(
+    data,
+    county_var = "county",
+    allocation_df,
+    alloc_size_var = "sample",
+    seed = as.numeric(Sys.Date())
+){
+
+  set.seed(seed)
+
+  joined_frame <- data %>%
+    dplyr::inner_join(
+      allocation_df,
+      by = county_var
+    )
+
+  joined_frame %>%
+    dplyr::group_by(
+      dplyr::across(dplyr::any_of(county_var))
+    ) %>%
+    dplyr::slice_sample(
+      n = min(dplyr::n(), first(.data[[alloc_size_var]]))
+    ) %>%
+    dplyr::ungroup()
+}
+```
+
+
+## two stage cluster random sampling
+
+```{r function-draw_cluster_sample}
+#' Draw a Two-Stage Cluster Sample of Households
+#'
+#' This function performs two-stage cluster sampling within counties. In the 
+#' first stage, a specified number of unique villages are selected randomly. In the 
+#' second stage, a fixed number of households are randomly drawn from each 
+#' of those selected villages. Both target sizes are pulled from the allocation frame.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var The bare or quoted column name identifying the county stratum.
+#' @param village_id_var The bare or quoted column name identifying the unique village.
+#' @param allocation_df A data frame containing columns for the county identifier, 
+#'   the target village sample size, and the target household sample size per village.
+#' @param alloc_villages_var The bare or quoted column name in `allocation_df` 
+#'   indicating the number of villages to sample per county.
+#' @param alloc_hh_var The bare or quoted column name in `allocation_df` 
+#'   indicating the number of households to sample per chosen village.
+#' @param seed An integer value used to initialize the pseudo-random number generator 
+#'   for reproducible sampling. Defaults to `42`.
+#'
+#' @return A data frame containing the cluster-sampled household rows.
+#'
+#' @importFrom dplyr group_by mutate ungroup arrange row_number filter across any_of distinct n inner_join select
+#' @importFrom rlang sym
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # dummy raw household data
+#' raw_households <- data.frame(
+#'   county_id = rep(c("County_A", "County_B"), each = 15),
+#'   village_id = c(rep("V1", 5), rep("V2", 5), rep("V3", 5), 
+#'                  rep("V4", 5), rep("V5", 5), rep("V6", 5)),
+#'   household_id = paste0("HH_", 1:30)
+#' )
+#'
+#' # multi-stage target allocations dataframe
+#' cluster_allocations <- data.frame(
+#'   county_id = c("County_A", "County_B"),
+#'   target_villages = c(2, 2),
+#'   target_hh_per_village = c(3, 2)
+#' )
+#'
+#' # run dynamic cluster sampling
+#' cluster_sample <- draw_cluster_sample(
+#'   data = raw_households,
+#'   county_var = "county_id",
+#'   village_id_var = "village_id",
+#'   allocation_df = cluster_allocations,
+#'   alloc_villages_var = "target_villages",
+#'   alloc_hh_var = "target_hh_per_village",
+#'   seed = 42
+#' )
+#' }
+draw_cluster_sample <- function(
+    data,
+    county_var = "county",
+    village_id_var = "village",
+    allocation_df,
+    alloc_villages_var = "target_villages",
+    alloc_hh_var = "target_hh_per_village",
+    seed = 42
+){
+
+  set.seed(seed)
+
+  selected_villages <- data %>%
+    dplyr::distinct(
+      dplyr::across(
+        dplyr::any_of(
+          c(county_var, village_id_var)
+        )
+      )
+    ) %>%
+    dplyr::inner_join(
+      allocation_df,
+      by = county_var
+    ) %>%
+    dplyr::group_by(
+      dplyr::across(
+        dplyr::any_of(county_var)
+      )
+    ) %>%
+    dplyr::slice_sample(
+      n = min(
+        dplyr::n(),
+        first(.data[[alloc_villages_var]])
+      )
+    ) %>%
+    dplyr::ungroup()
+
+  data %>%
+    dplyr::inner_join(
+      selected_villages,
+      by = c(county_var, village_id_var)
+    ) %>%
+    dplyr::group_by(
+      dplyr::across(
+        dplyr::any_of(
+          c(county_var, village_id_var)
+        )
+      )
+    ) %>%
+    dplyr::slice_sample(
+      n = min(
+        dplyr::n(),
+        first(.data[[alloc_hh_var]])
+      )
+    ) %>%
+    dplyr::ungroup()
+}
+```
+
+## systematic sampling county level
+
+```{r function-draw_systematic_across_villages}
+#' Draw a Systematic Sample of Households Spreading Across Villages
+#'
+#' This function selects a systematic random sample of individual household rows 
+#' from within counties. By sorting by village first, the systematic interval 
+#' automatically spreads the selected sample evenly across the different villages.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var The bare or quoted column name identifying the county stratum.
+#' @param village_id_var The bare or quoted column name identifying the unique village.
+#' @param allocation_df A data frame containing two columns: the county identifier 
+#'   and the allocated household sample size for that county.
+#' @param alloc_size_var The bare or quoted column name in `allocation_df` 
+#'   indicating the target sample size.
+#' @param seed An integer value used to initialize the pseudo-random number generator. 
+#'   Defaults to `42`.
+#'
+#' @return A data frame containing the systematically selected household rows.
+#'
+#' @importFrom dplyr group_by mutate ungroup inner_join arrange row_number filter across any_of n select
+#' @importFrom rlang sym
+#' @export
+draw_systematic_across_villages <- function(
+    data,
+    county_var = "county",
+    village_id_var = "village",
+    allocation_df,
+    alloc_size_var = "sample",
+    seed = as.numeric(Sys.Date())
+){
+
+  set.seed(seed)
+
+  joined_frame <- data %>%
+    dplyr::inner_join(
+      allocation_df,
+      by = county_var
+    ) %>%
+    dplyr::arrange(
+      dplyr::across(
+        dplyr::any_of(
+          c(county_var, village_id_var)
+        )
+      )
+    )
+
+  joined_frame %>%
+    dplyr::group_by(
+      dplyr::across(
+        dplyr::any_of(county_var)
+      )
+    ) %>%
+    dplyr::group_modify(~{
+
+      df <- .x
+
+      N <- nrow(df)
+      n_target <- min(
+        first(df[[alloc_size_var]]),
+        N
+      )
+
+      k <- N / n_target
+
+      start <- sample(
+        seq_len(ceiling(k)),
+        1
+      )
+
+      idx <- floor(
+        start + (0:(n_target-1))*k
+      )
+
+      idx <- pmin(idx, N)
+
+      df[idx, , drop = FALSE]
+
+    }) %>%
+    dplyr::ungroup()
+}
+```
+
+
+## systematic sample village level allocation
+
+```{r function-draw_systematic_within_villages}
+#' Draw a Systematic Sample of Households Within Each Village
+#'
+#' This function applies systematic random sampling to households independently 
+#' within each village cluster based on specific target allocations for each village.
+#'
+#' @param data A data frame containing raw household-level records.
+#' @param county_var The bare or quoted column name identifying the county stratum.
+#' @param village_id_var The bare or quoted column name identifying the unique village.
+#' @param allocation_df A data frame containing columns for the village identifier 
+#'   and its assigned household sample target.
+#' @param alloc_size_var The bare or quoted column name in `allocation_df` 
+#'   indicating the village-level target sample size.
+#' @param seed An integer value used to initialize the pseudo-random number generator. 
+#'   Defaults to `42`.
+#'
+#' @return A data frame containing the systematically selected household rows.
+#'
+#' @importFrom dplyr group_by mutate ungroup inner_join arrange row_number filter across any_of n select
+#' @importFrom rlang sym
+#' @export
+draw_systematic_within_villages <- function(
+    data,
+    county_var = "county",
+    village_id_var = "village",
+    allocation_df,
+    alloc_size_var = "sample",
+    seed = as.numeric(Sys.Date())
+){
+
+  set.seed(seed)
+
+  joined_frame <- data %>%
+    dplyr::inner_join(
+      allocation_df,
+      by = village_id_var
+    ) %>%
+    dplyr::arrange(
+      dplyr::across(
+        dplyr::any_of(
+          c(county_var, village_id_var)
+        )
+      )
+    )
+
+  joined_frame %>%
+    dplyr::group_by(
+      dplyr::across(
+        dplyr::any_of(
+          c(county_var, village_id_var)
+        )
+      )
+    ) %>%
+    dplyr::group_modify(~{
+
+      df <- .x
+
+      N <- nrow(df)
+
+      n_target <- min(
+        first(df[[alloc_size_var]]),
+        N
+      )
+
+      k <- N / n_target
+
+      start <- sample(
+        seq_len(ceiling(k)),
+        1
+      )
+
+      idx <- floor(
+        start + (0:(n_target-1))*k
+      )
+
+      idx <- pmin(idx, N)
+
+      df[idx, , drop = FALSE]
+
+    }) %>%
+    dplyr::ungroup()
+}
+```
+
+## apply corrections
+
+```{r function-apply_corrections}
+#' Apply Data Cleaning Corrections Using an Embedded Cleaning Log
+#'
+#' This function updates a main dataset using a correction data frame that contains 
+#' a target column name variable, an updated values variable, and columns matching 
+#' the unique record identifiers of the main data frame.
+#'
+#' @param data A data frame containing the main dataset to be cleaned.
+#' @param id_var The bare or quoted column name representing the unique identifier 
+#'   linking both datasets (e.g., "uuid", "household_id").
+#' @param corrections A data frame containing the corrections log along with the matching keys.
+#' @param var_to_change_col The bare or quoted column name in `corrections` that 
+#'   holds the names of the target columns in `data` to change. Defaults to "var_to_change".
+#' @param correct_value_col The bare or quoted column name in `corrections` that 
+#'   holds the updated value. Defaults to "correct_value".
+#'
+#' @return A data frame matching the structure of `data`, with specified values corrected.
+#'
+#' @importFrom dplyr filter pull select inner_join mutate left_join rename across any_of
+#' @importFrom rlang sym !! :=
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # dummy main household dataset
+#' main_df <- data.frame(
+#'   uuid = c("uuid_1", "uuid_2", "uuid_3"),
+#'   county_id = c("County_A", "County_A", "County_B"),
+#'   num_members = c(5, 3, 12),
+#'   respondent_age = c(42, 19, 35),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # cleaning log frame with additional metadata columns
+#' clean_log <- data.frame(
+#'   uuid = c("uuid_1", "uuid_3"),
+#'   today = c("2026-05-18", "2026-05-18"), # extra column in the log
+#'   enumerator = c("John", "Alice"),         # extra column in the log
+#'   var_to_change = c("num_members", "respondent_age"),
+#'   correct_value = c("6", "36"),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # execute cell updates
+#' cleaned_df <- apply_corrections(
+#'   data = main_df,
+#'   id_var = "uuid",
+#'   corrections = clean_log
+#' )
+#' }
+apply_corrections <- function(
+    data, 
+    id_var = "uuid", 
+    corrections, 
+    var_to_change_col = "var_to_change", 
+    correct_value_col = "correct_value"
+) {
+  
+  # convert input column names safely to standard strings
+  id_str <- as.character(substitute(id_var))
+  if (!id_str %in% names(data)) id_str <- id_var
+  
+  var_change_str <- as.character(substitute(var_to_change_col))
+  if (!var_change_str %in% names(corrections)) var_change_str <- var_to_change_col
+  
+  correct_val_str <- as.character(substitute(correct_value_col))
+  if (!correct_val_str %in% names(corrections)) correct_val_str <- correct_value_col
+  
+  # extract only the unique variables that actually exist in the main data
+  distinct_vars <- corrections %>%
+    dplyr::filter(!!rlang::sym(var_change_str) %in% names(data)) %>%
+    dplyr::pull(!!rlang::sym(var_change_str)) %>%
+    unique()
+  
+  cleaned_data <- data
+  
+  # iterate sequentially through each column type needing corrections
+  for (current_var in distinct_vars) {
+    
+    # isolate the matching ID and target value, ignoring all other extra columns
+    sub_corrections <- corrections %>%
+      dplyr::filter(!!rlang::sym(var_change_str) == current_var) %>%
+      dplyr::select(dplyr::any_of(c(id_str, correct_val_str)))
+    
+    # preserve the target column class to avoid unexpected vector type coercion
+    target_class <- class(cleaned_data[[current_var]])[1]
+    
+    # safely cast the replacement values to prevent type mismatch errors
+    if (target_class %in% c("numeric", "integer")) {
+      sub_corrections[[correct_val_str]] <- as.numeric(sub_corrections[[correct_val_str]])
+    } else if (target_class == "logical") {
+      sub_corrections[[correct_val_str]] <- as.logical(sub_corrections[[correct_val_str]])
+    } else {
+      sub_corrections[[correct_val_str]] <- as.character(sub_corrections[[correct_val_str]])
+    }
+    
+    # create a unique temporary column name for the joining process
+    join_target_name <- paste0("new_val_", current_var)
+    sub_corrections <- dplyr::rename(
+      sub_corrections, 
+      !!rlang::sym(join_target_name) := !!rlang::sym(correct_val_str)
+    )
+    
+    # join on the id variable, replace the value where a match is found, and remove the temp column
+    cleaned_data <- cleaned_data %>%
+      dplyr::left_join(sub_corrections, by = id_str) %>%
+      dplyr::mutate(
+        !!rlang::sym(current_var) := ifelse(
+          !is.na(!!rlang::sym(join_target_name)), 
+          !!rlang::sym(join_target_name), 
+          !!rlang::sym(current_var)
+        )
+      ) %>%
+      dplyr::select(-dplyr::any_of(join_target_name))
+  }
+  
+  return(cleaned_data)
+}
+```
+
+
 
 <!--
 There can be other functions, examples and tests in your flat template.

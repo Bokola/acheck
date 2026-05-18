@@ -134,6 +134,20 @@ After inflating the template
 
 ## Proportional to size random sample
 
+## Stratified sampling
+
+
+## two stage cluster random sampling
+
+## systematic sampling county level
+
+
+## systematic sample village level allocation
+
+## apply corrections
+
+
+
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.
