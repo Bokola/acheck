@@ -24,6 +24,7 @@ Imports:
     robotoolbox,
     scales,
     stats,
+    stringdist,
     stringr,
     tidyr
 Suggests: 
