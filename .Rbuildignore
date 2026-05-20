@@ -8,3 +8,4 @@
 ^\.github$
 ^codecov\.yml$
 ^acheck\.Rproj$
+^data-raw$

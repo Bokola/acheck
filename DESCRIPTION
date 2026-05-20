@@ -7,11 +7,14 @@ Authors@R:
 Description: Custom functions for organizing ACTED humanitarian data for
     analysis.
 License: MIT + file LICENSE
+Depends: 
+    R (>= 3.5)
 Imports: 
     dm,
     dplyr,
     flextable,
     ggplot2,
+    gt,
     gtreg,
     gtsummary,
     labelled,
@@ -26,6 +29,7 @@ Imports:
     stats,
     stringdist,
     stringr,
+    tibble,
     tidyr
 Suggests: 
     knitr,
@@ -35,5 +39,6 @@ VignetteBuilder:
     knitr
 Config/fusen/version: 0.7.2
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0

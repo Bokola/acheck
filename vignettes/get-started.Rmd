@@ -152,6 +152,9 @@ After inflating the template
 ## standardize names
 
 
+## Veification criteria table
+
+
 
 <!--
 There can be other functions, examples and tests in your flat template.

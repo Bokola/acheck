@@ -31,6 +31,7 @@ flat_full.Rmd:
   - R/draw_systematic_within_villages.R
   - R/apply_corrections.R
   - R/standardize_names.R
+  - R/gen_verification_criteria_table.R
   tests: tests/testthat/test-add_gt_to_word.R
   vignettes: vignettes/get-started.Rmd
   inflate:
