@@ -132,7 +132,8 @@ df_clean <- df_out %>%
   ) %>%
   mutate(
     village = gsub("_", " ", village),
-    county = gsub("_", " ", county)
+    county = gsub("_", " ", county),
+    ben_name = stringr::str_squish(ben_name) %>% stringr::str_to_title()
   )
 
 }
