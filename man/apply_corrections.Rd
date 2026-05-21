@@ -9,7 +9,8 @@ apply_corrections(
   id_var = "uuid",
   corrections,
   var_to_change_col = "var_to_change",
-  correct_value_col = "correct_value"
+  correct_value_col = "correct_value",
+  ben_name_col = "ben_name"
 )
 }
 \arguments{
@@ -25,41 +26,44 @@ holds the names of the target columns in \code{data} to change. Defaults to "var
 
 \item{correct_value_col}{The bare or quoted column name in \code{corrections} that
 holds the updated value. Defaults to "correct_value".}
+
+\item{ben_name_col}{The bare or quoted column name in \code{corrections} that holds the
+beneficiary names to check for deletions. Defaults to "ben_name".}
 }
 \value{
-A data frame matching the structure of \code{data}, with specified values corrected.
+A data frame matching the structure of \code{data}, with specified values corrected or rows deleted.
 }
 \description{
 This function updates a main dataset using a correction data frame that contains
 a target column name variable, an updated values variable, and columns matching
-the unique record identifiers of the main data frame.
+the unique record identifiers of the main data frame. It also handles row
+deletions when the variable to change is marked as "delete" or "Delete".
 }
 \examples{
 \dontrun{
 # dummy main household dataset
 main_df <- data.frame(
-  uuid = c("uuid_1", "uuid_2", "uuid_3"),
-  county_id = c("County_A", "County_A", "County_B"),
-  num_members = c(5, 3, 12),
-  respondent_age = c(42, 19, 35),
-  stringsAsFactors = FALSE
+   uuid = c("uuid_1", "uuid_2", "uuid_3"),
+   ben_name = c("John Doe", "Jane Smith", "Alice Jones"),
+   county_id = c("County_A", "County_A", "County_B"),
+   num_members = c(5, 3, 12),
+   stringsAsFactors = FALSE
 )
 
-# cleaning log frame with additional metadata columns
+# cleaning log frame with deletion and standard correction rows
 clean_log <- data.frame(
-  uuid = c("uuid_1", "uuid_3"),
-  today = c("2026-05-18", "2026-05-18"), # extra column in the log
-  enumerator = c("John", "Alice"),         # extra column in the log
-  var_to_change = c("num_members", "respondent_age"),
-  correct_value = c("6", "36"),
-  stringsAsFactors = FALSE
+   uuid = c("uuid_1", "uuid_2"),
+   ben_name = c("John Doe", "Jane Smith"),
+   var_to_change = c("num_members", "delete"),
+   correct_value = c("6", NA),
+   stringsAsFactors = FALSE
 )
 
-# execute cell updates
+# execute cell updates and deletions
 cleaned_df <- apply_corrections(
-  data = main_df,
-  id_var = "uuid",
-  corrections = clean_log
+   data = main_df,
+   id_var = "uuid",
+   corrections = clean_log
 )
 }
 }
