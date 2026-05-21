@@ -2171,21 +2171,23 @@ apply_corrections <- function(
 ## read excel workbook
 
 ```{r function-read_workbook}
-#' Read multiple Excel sheets into a list or data frame with clean names
+#' Read Excel sheets or an entire workbook into a list or data frame with clean names
 #'
 #' @description
-#' Iterates through available worksheets within an Excel file, extracts 
-#' their content into a structured list, and standardizes column names using snake_case. 
-#' If the file contains exactly one worksheet, it automatically drops the list format 
-#' and returns a single data frame directly.
+#' Iterates through available worksheets within an Excel file or targets a specific sheet, 
+#' extracts content while skipping a designated number of rows, and standardizes column names 
+#' using snake_case. If the target evaluation resolves to exactly one worksheet, it automatically 
+#' drops the list format and returns a single data frame directly.
 #'
 #' @param path Character string representing the path to the Excel file.
 #' @param bind_rows Logical indicator. If TRUE, binds multiple extracted sheets into 
 #'   a single unified data frame using a compiler identifier column. Defaults to FALSE.
 #' @param id Character string naming the optional identifier column that tracks 
 #'   the source sheet name when `bind_rows` is TRUE. Defaults to "sheet_name".
+#' @param skip Integer specifying the number of rows to skip at the start of reading. Defaults to 0.
+#' @param sheet_name Character string specifying a single sheet to read. If NULL, all sheets are processed. Defaults to NULL.
 #'
-#' @return A single data frame if only one sheet exists or `bind_rows = TRUE`. 
+#' @return A single data frame if only one sheet is processed or `bind_rows = TRUE`. 
 #'   Otherwise, a named list of data frames representing individual sheets.
 #'
 #' @importFrom readxl excel_sheets read_excel
@@ -2196,17 +2198,21 @@ apply_corrections <- function(
 #'
 #' @examples
 #' \dontrun{
-#' # if file has 1 sheet, returns a data frame directly; if multiple, returns a list
-#' output_data <- read_excel_sheets("survey_data.xlsx", bind_rows = FALSE)
+#' # read a specific sheet and skip the first 2 rows
+#' df_raw <- read_workbook("survey_data.xlsx", sheet_name = "Main_Data", skip = 2)
 #' }
-read_workbook <- function(path, bind_rows = FALSE, id = "sheet_name") {
+read_workbook <- function(path, bind_rows = FALSE, id = "sheet_name", skip = 0, sheet_name = NULL) {
   
-  # identify all available worksheet names within the workbook
-  sheet_names <- readxl::excel_sheets(path)
+  # determine target sheet names based on user input selection
+  if (!is.null(sheet_name)) {
+    sheet_names <- sheet_name
+  } else {
+    sheet_names <- readxl::excel_sheets(path)
+  }
   
-  # short circuit and return a single data frame instantly if only one sheet is found
+  # short circuit and return a single data frame instantly if only one sheet is target evaluated
   if (length(sheet_names) == 1) {
-    single_df <- readxl::read_excel(path = path, sheet = sheet_names) %>%
+    single_df <- readxl::read_excel(path = path, sheet = sheet_names, skip = skip) %>%
       janitor::clean_names()
     return(single_df)
   }
@@ -2215,13 +2221,12 @@ read_workbook <- function(path, bind_rows = FALSE, id = "sheet_name") {
   sheets_list <- sheet_names %>%
     purrr::set_names() %>%
     purrr::map(~ {
-      readxl::read_excel(path = path, sheet = .x) %>%
+      readxl::read_excel(path = path, sheet = .x, skip = skip) %>%
         janitor::clean_names()
     })
   
   # conditionally collapse the list rows into a single data frame if specified
   if (bind_rows) {
-    # names_to maps list names cleanly onto the bound frame rows
     combined_data <- purrr::list_rbind(sheets_list, names_to = id)
     return(combined_data)
   }
@@ -2343,9 +2348,9 @@ standardize_names <- function(
 #'
 #' @description
 #' Compares a column of names in a flagged dataset against a column of names in a 
-#' master reference dataset using string distance. If a potential match is identified 
-#' within a specified text edit threshold, the candidate name from the master dataset 
-#' is written to a new column named `name_possible` in the flagged dataset.
+#' master reference dataset using optimized vectorized string distance matrices. 
+#' If a potential match is identified within a specified text edit threshold, 
+#' the candidate name from the master dataset is mapped into a new column named `name_possible`.
 #'
 #' @param flagged_data A data frame containing the flagged records needing verification.
 #' @param master_data A data frame containing the verified master benchmark records.
@@ -2356,78 +2361,153 @@ standardize_names <- function(
 #' @return A data frame matching the structure of `flagged_data`, with an additional 
 #'   `name_possible` character column containing the matched master dataset name (or NA if no match is found).
 #'
-#' @importFrom dplyr mutate rowwise ungroup
+#' @importFrom dplyr mutate left_join select any_of tibble
 #' @importFrom utils adist
+#' @importFrom rlang sym !! :=
+#' @importFrom stringdist stringdistmatrix
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # create sample flagged data with typos
-#' bad_data <- data.frame(
-#'   uuid = c("id_1", "id_2", "id_3"),
-#'   ben_name = c("Jhn Doe", "Jane Smithh", "Xavier Mery"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' # create master reference data
-#' good_data <- data.frame(
-#'   ben_name = c("John Doe", "Jane Smith", "Robert Chen"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' # match names
 #' verified_df <- find_name_matches(bad_data, good_data, max_dist = 2)
 #' }
+
+
 find_name_matches <- function(
-    flagged_data, 
-    master_data, 
-    flagged_col = "ben_name", 
-    master_col = "ben_name", 
-    max_dist = 3
+    flagged_data,
+    master_data,
+    flagged_col = "ben_name",
+    master_col  = "ben_name",
+    max_dist    = 3
 ) {
-  
-  # convert column arguments cleanly to character strings
   flag_str <- as.character(substitute(flagged_col))
   if (!flag_str %in% names(flagged_data)) flag_str <- flagged_col
   
   master_str <- as.character(substitute(master_col))
   if (!master_str %in% names(master_data)) master_str <- master_col
   
-  # extract the baseline master reference search array vector while dropping missing text values
   master_pool <- unique(na.omit(as.character(master_data[[master_str]])))
+  flagged_vec <- as.character(flagged_data[[flag_str]])
   
-  # define an atomic string matching lookahead function
-  match_single_name <- function(current_name, pool, threshold) {
-    if (is.na(current_name) || current_name == "") return(NA_character_)
-    
-    # calculate string edit distances across the entire reference array pool
-    distances <- as.vector(utils::adist(current_name, pool, ignore.case = TRUE))
-    
-    # identify position of minimum distance match
-    min_idx <- which.min(distances)
-    
-    # pick the name out if it falls within the specified edit boundary threshold
-    if (length(min_idx) > 0 && distances[min_idx] <= threshold) {
-      return(pool[min_idx])
-    }
-    
-    return(NA_character_)
+  sort_tokens <- function(x) {
+    vapply(
+      strsplit(tolower(trimws(x)), "[[:space:]\\-]+"),
+      function(toks) paste(sort(toks), collapse = " "),
+      character(1)
+    )
   }
   
-  # run rowwise string matching and compile output dataframe structural arrays
-  result_data <- flagged_data %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(
-      name_possible = match_single_name(
-        current_name = !!rlang::sym(flag_str), 
-        pool = master_pool, 
-        threshold = max_dist
-      )
-    ) %>%
-    dplyr::ungroup()
+  flagged_lower <- tolower(flagged_vec)
+  master_lower  <- tolower(master_pool)
+  flagged_tok   <- sort_tokens(flagged_vec)
+  master_tok    <- sort_tokens(master_pool)
   
-  return(result_data)
+  # blocking key: first character of the first token
+  flagged_block <- substr(flagged_tok, 1, 1)
+  master_block  <- substr(master_tok,  1, 1)
+  
+  name_possible <- rep(NA_character_, length(flagged_vec))
+  
+  for (block in unique(flagged_block)) {
+    fi <- which(flagged_block == block)   # row indices in flagged
+    mi <- which(master_block  == block)   # candidate indices in master
+    
+    if (length(fi) == 0 || length(mi) == 0) next
+    
+    dist_whole <- stringdist::stringdistmatrix(
+      flagged_lower[fi], master_lower[mi],
+      method = "osa", nthread = parallel::detectCores()
+    )
+    dist_token <- stringdist::stringdistmatrix(
+      flagged_tok[fi], master_tok[mi],
+      method = "osa", nthread = parallel::detectCores()
+    )
+    dist_best <- pmin(dist_whole, dist_token)
+    
+    best_col  <- max.col(-dist_best, ties.method = "first")
+    best_dist <- dist_best[cbind(seq_along(fi), best_col)]
+    
+    matched <- best_dist <= max_dist
+    name_possible[fi[matched]] <- master_pool[mi[best_col[matched]]]
+  }
+  
+  flagged_data[["name_possible"]] <- name_possible
+  flagged_data
+}
+
+```
+
+
+## match county records
+
+```{r function-match_county_records}
+#' Filter and Match Payroll Records Against Registration Data by County
+#'
+#' @description
+#' Subsets registration data for a specific county, removes duplicate IDs,
+#' joins the results with payroll records, and flags rows where the payroll name
+#' is a partial match inside the registration name string.
+#'
+#' @param registration A data frame containing the primary registration benchmark records.
+#' @param payroll A data frame containing the target payroll records to verify.
+#' @param county_name Character string specifying the county name to filter on. Defaults to "Tana".
+#'
+#' @return A data frame matching the layout of the payroll dataset, appended with 
+#'   columns from the subsetted registration data and a logical `names_match` flag.
+#'
+#' @importFrom dplyr filter select distinct left_join mutate
+#' @importFrom stringi stri_detect_fixed
+#'
+#' @export
+match_county_records <- function(registration, payroll, county_name = "Tana") {
+  # filter registration pool for the target county and drop duplicate id records
+  df_county_ref <- registration %>%
+    dplyr::filter(grepl(county_name, county, ignore.case = TRUE)) %>%
+    dplyr::select(ben_name, reg_num, ben_id_number) %>%
+    dplyr::distinct(ben_id_number, .keep_all = TRUE)
+  
+  # merge payroll records with the clean county reference subset
+  df_joined <- payroll %>%
+    dplyr::left_join(
+      df_county_ref,
+      by = c("id_number" = "ben_id_number")
+    ) %>%
+    # remove residual system export columns starting with x or X
+    dplyr::select(-grep("^[xX]", names(.)))
+  
+  # fast vectorized string detection — no r loops or nested scans
+  df_joined %>%
+    dplyr::mutate(
+      names_match = !is.na(name_payroll) & 
+        !is.na(ben_name) & 
+        name_payroll != "" & 
+        stringi::stri_detect_fixed(ben_name, name_payroll, case_insensitive = TRUE)
+    )
+}
+```
+
+
+## normalize names
+
+```{r function-normalize_names}
+#' Normalize a Name Vector
+#'
+#' @description
+#' Cleans a character vector of names by collapsing extra whitespace,
+#' trimming leading/trailing spaces, and converting to title case.
+#'
+#' @param x A character vector of names.
+#'
+#' @return A cleaned character vector.
+#'
+#' @importFrom stringr str_squish str_to_title
+#'
+#' @export
+normalize_names <- function(x) {
+  x <- stringr::str_squish(x)       # trims + collapses internal spaces
+  x <- stringr::str_to_title(x)     # title case
+  x
 }
 ```
 

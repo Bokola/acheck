@@ -29,26 +29,12 @@ A data frame matching the structure of \code{flagged_data}, with an additional
 }
 \description{
 Compares a column of names in a flagged dataset against a column of names in a
-master reference dataset using string distance. If a potential match is identified
-within a specified text edit threshold, the candidate name from the master dataset
-is written to a new column named \code{name_possible} in the flagged dataset.
+master reference dataset using optimized vectorized string distance matrices.
+If a potential match is identified within a specified text edit threshold,
+the candidate name from the master dataset is mapped into a new column named \code{name_possible}.
 }
 \examples{
 \dontrun{
-# create sample flagged data with typos
-bad_data <- data.frame(
-  uuid = c("id_1", "id_2", "id_3"),
-  ben_name = c("Jhn Doe", "Jane Smithh", "Xavier Mery"),
-  stringsAsFactors = FALSE
-)
-
-# create master reference data
-good_data <- data.frame(
-  ben_name = c("John Doe", "Jane Smith", "Robert Chen"),
-  stringsAsFactors = FALSE
-)
-
-# match names
 verified_df <- find_name_matches(bad_data, good_data, max_dist = 2)
 }
 }

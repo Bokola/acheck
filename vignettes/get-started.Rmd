@@ -161,6 +161,12 @@ After inflating the template
 ## find name matches
 
 
+## match county records
+
+
+## normalize names
+
+
 ## Veification criteria table
 
 

@@ -2,9 +2,15 @@
 % Please edit documentation in R/read_workbook.R
 \name{read_workbook}
 \alias{read_workbook}
-\title{Read multiple Excel sheets into a list or data frame with clean names}
+\title{Read Excel sheets or an entire workbook into a list or data frame with clean names}
 \usage{
-read_workbook(path, bind_rows = FALSE, id = "sheet_name")
+read_workbook(
+  path,
+  bind_rows = FALSE,
+  id = "sheet_name",
+  skip = 0,
+  sheet_name = NULL
+)
 }
 \arguments{
 \item{path}{Character string representing the path to the Excel file.}
@@ -14,20 +20,24 @@ a single unified data frame using a compiler identifier column. Defaults to FALS
 
 \item{id}{Character string naming the optional identifier column that tracks
 the source sheet name when \code{bind_rows} is TRUE. Defaults to "sheet_name".}
+
+\item{skip}{Integer specifying the number of rows to skip at the start of reading. Defaults to 0.}
+
+\item{sheet_name}{Character string specifying a single sheet to read. If NULL, all sheets are processed. Defaults to NULL.}
 }
 \value{
-A single data frame if only one sheet exists or \code{bind_rows = TRUE}.
+A single data frame if only one sheet is processed or \code{bind_rows = TRUE}.
 Otherwise, a named list of data frames representing individual sheets.
 }
 \description{
-Iterates through available worksheets within an Excel file, extracts
-their content into a structured list, and standardizes column names using snake_case.
-If the file contains exactly one worksheet, it automatically drops the list format
-and returns a single data frame directly.
+Iterates through available worksheets within an Excel file or targets a specific sheet,
+extracts content while skipping a designated number of rows, and standardizes column names
+using snake_case. If the target evaluation resolves to exactly one worksheet, it automatically
+drops the list format and returns a single data frame directly.
 }
 \examples{
 \dontrun{
-# if file has 1 sheet, returns a data frame directly; if multiple, returns a list
-output_data <- read_excel_sheets("survey_data.xlsx", bind_rows = FALSE)
+# read a specific sheet and skip the first 2 rows
+df_raw <- read_workbook("survey_data.xlsx", sheet_name = "Main_Data", skip = 2)
 }
 }

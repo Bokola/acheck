@@ -4,9 +4,9 @@
 #'
 #' @description
 #' Compares a column of names in a flagged dataset against a column of names in a 
-#' master reference dataset using string distance. If a potential match is identified 
-#' within a specified text edit threshold, the candidate name from the master dataset 
-#' is written to a new column named `name_possible` in the flagged dataset.
+#' master reference dataset using optimized vectorized string distance matrices. 
+#' If a potential match is identified within a specified text edit threshold, 
+#' the candidate name from the master dataset is mapped into a new column named `name_possible`.
 #'
 #' @param flagged_data A data frame containing the flagged records needing verification.
 #' @param master_data A data frame containing the verified master benchmark records.
@@ -17,76 +17,78 @@
 #' @return A data frame matching the structure of `flagged_data`, with an additional 
 #'   `name_possible` character column containing the matched master dataset name (or NA if no match is found).
 #'
-#' @importFrom dplyr mutate rowwise ungroup
+#' @importFrom dplyr mutate left_join select any_of tibble
 #' @importFrom utils adist
+#' @importFrom rlang sym !! :=
+#' @importFrom stringdist stringdistmatrix
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # create sample flagged data with typos
-#' bad_data <- data.frame(
-#'   uuid = c("id_1", "id_2", "id_3"),
-#'   ben_name = c("Jhn Doe", "Jane Smithh", "Xavier Mery"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' # create master reference data
-#' good_data <- data.frame(
-#'   ben_name = c("John Doe", "Jane Smith", "Robert Chen"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' # match names
 #' verified_df <- find_name_matches(bad_data, good_data, max_dist = 2)
 #' }
+
+
 find_name_matches <- function(
-    flagged_data, 
-    master_data, 
-    flagged_col = "ben_name", 
-    master_col = "ben_name", 
-    max_dist = 3
+    flagged_data,
+    master_data,
+    flagged_col = "ben_name",
+    master_col  = "ben_name",
+    max_dist    = 3
 ) {
-  
-  # convert column arguments cleanly to character strings
   flag_str <- as.character(substitute(flagged_col))
   if (!flag_str %in% names(flagged_data)) flag_str <- flagged_col
   
   master_str <- as.character(substitute(master_col))
   if (!master_str %in% names(master_data)) master_str <- master_col
   
-  # extract the baseline master reference search array vector while dropping missing text values
   master_pool <- unique(na.omit(as.character(master_data[[master_str]])))
+  flagged_vec <- as.character(flagged_data[[flag_str]])
   
-  # define an atomic string matching lookahead function
-  match_single_name <- function(current_name, pool, threshold) {
-    if (is.na(current_name) || current_name == "") return(NA_character_)
-    
-    # calculate string edit distances across the entire reference array pool
-    distances <- as.vector(utils::adist(current_name, pool, ignore.case = TRUE))
-    
-    # identify position of minimum distance match
-    min_idx <- which.min(distances)
-    
-    # pick the name out if it falls within the specified edit boundary threshold
-    if (length(min_idx) > 0 && distances[min_idx] <= threshold) {
-      return(pool[min_idx])
-    }
-    
-    return(NA_character_)
+  sort_tokens <- function(x) {
+    vapply(
+      strsplit(tolower(trimws(x)), "[[:space:]\\-]+"),
+      function(toks) paste(sort(toks), collapse = " "),
+      character(1)
+    )
   }
   
-  # run rowwise string matching and compile output dataframe structural arrays
-  result_data <- flagged_data %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(
-      name_possible = match_single_name(
-        current_name = !!rlang::sym(flag_str), 
-        pool = master_pool, 
-        threshold = max_dist
-      )
-    ) %>%
-    dplyr::ungroup()
+  flagged_lower <- tolower(flagged_vec)
+  master_lower  <- tolower(master_pool)
+  flagged_tok   <- sort_tokens(flagged_vec)
+  master_tok    <- sort_tokens(master_pool)
   
-  return(result_data)
+  # blocking key: first character of the first token
+  flagged_block <- substr(flagged_tok, 1, 1)
+  master_block  <- substr(master_tok,  1, 1)
+  
+  name_possible <- rep(NA_character_, length(flagged_vec))
+  
+  for (block in unique(flagged_block)) {
+    fi <- which(flagged_block == block)   # row indices in flagged
+    mi <- which(master_block  == block)   # candidate indices in master
+    
+    if (length(fi) == 0 || length(mi) == 0) next
+    
+    dist_whole <- stringdist::stringdistmatrix(
+      flagged_lower[fi], master_lower[mi],
+      method = "osa", nthread = parallel::detectCores()
+    )
+    dist_token <- stringdist::stringdistmatrix(
+      flagged_tok[fi], master_tok[mi],
+      method = "osa", nthread = parallel::detectCores()
+    )
+    dist_best <- pmin(dist_whole, dist_token)
+    
+    best_col  <- max.col(-dist_best, ties.method = "first")
+    best_dist <- dist_best[cbind(seq_along(fi), best_col)]
+    
+    matched <- best_dist <= max_dist
+    name_possible[fi[matched]] <- master_pool[mi[best_col[matched]]]
+  }
+  
+  flagged_data[["name_possible"]] <- name_possible
+  flagged_data
 }
+
