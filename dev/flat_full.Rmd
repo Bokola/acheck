@@ -2221,7 +2221,8 @@ read_workbook <- function(path, bind_rows = FALSE, id = "sheet_name") {
   
   # conditionally collapse the list rows into a single data frame if specified
   if (bind_rows) {
-    combined_data <- purrr::list_rbind(sheets_list, id = id)
+    # names_to maps list names cleanly onto the bound frame rows
+    combined_data <- purrr::list_rbind(sheets_list, names_to = id)
     return(combined_data)
   }
   
