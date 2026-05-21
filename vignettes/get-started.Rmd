@@ -152,7 +152,13 @@ After inflating the template
 
 ## apply corrections
 
+## read excel workbook
+
+
 ## standardize names
+
+
+## find name matches
 
 
 ## Veification criteria table

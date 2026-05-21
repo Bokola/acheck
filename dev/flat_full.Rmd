@@ -2168,6 +2168,68 @@ apply_corrections <- function(
 }
 ```
 
+## read excel workbook
+
+```{r function-read_workbook}
+#' Read multiple Excel sheets into a list or data frame with clean names
+#'
+#' @description
+#' Iterates through available worksheets within an Excel file, extracts 
+#' their content into a structured list, and standardizes column names using snake_case. 
+#' If the file contains exactly one worksheet, it automatically drops the list format 
+#' and returns a single data frame directly.
+#'
+#' @param path Character string representing the path to the Excel file.
+#' @param bind_rows Logical indicator. If TRUE, binds multiple extracted sheets into 
+#'   a single unified data frame using a compiler identifier column. Defaults to FALSE.
+#' @param id Character string naming the optional identifier column that tracks 
+#'   the source sheet name when `bind_rows` is TRUE. Defaults to "sheet_name".
+#'
+#' @return A single data frame if only one sheet exists or `bind_rows = TRUE`. 
+#'   Otherwise, a named list of data frames representing individual sheets.
+#'
+#' @importFrom readxl excel_sheets read_excel
+#' @importFrom purrr set_names map list_rbind
+#' @importFrom janitor clean_names
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # if file has 1 sheet, returns a data frame directly; if multiple, returns a list
+#' output_data <- read_excel_sheets("survey_data.xlsx", bind_rows = FALSE)
+#' }
+read_workbook <- function(path, bind_rows = FALSE, id = "sheet_name") {
+  
+  # identify all available worksheet names within the workbook
+  sheet_names <- readxl::excel_sheets(path)
+  
+  # short circuit and return a single data frame instantly if only one sheet is found
+  if (length(sheet_names) == 1) {
+    single_df <- readxl::read_excel(path = path, sheet = sheet_names) %>%
+      janitor::clean_names()
+    return(single_df)
+  }
+  
+  # extract sheet names, read contents, and standardize variables to snake case
+  sheets_list <- sheet_names %>%
+    purrr::set_names() %>%
+    purrr::map(~ {
+      readxl::read_excel(path = path, sheet = .x) %>%
+        janitor::clean_names()
+    })
+  
+  # conditionally collapse the list rows into a single data frame if specified
+  if (bind_rows) {
+    combined_data <- purrr::list_rbind(sheets_list, id = id)
+    return(combined_data)
+  }
+  
+  return(sheets_list)
+}
+```
+
+
 ## standardize names
 
 ```{r function-standardize_names}
@@ -2269,6 +2331,102 @@ standardize_names <- function(
     )
   
   return(standardized_df)
+}
+```
+
+
+## find name matches
+
+```{r function-find_name_matches}
+#' Identify Potential Beneficiary Name Matches From a Master Dataset
+#'
+#' @description
+#' Compares a column of names in a flagged dataset against a column of names in a 
+#' master reference dataset using string distance. If a potential match is identified 
+#' within a specified text edit threshold, the candidate name from the master dataset 
+#' is written to a new column named `name_possible` in the flagged dataset.
+#'
+#' @param flagged_data A data frame containing the flagged records needing verification.
+#' @param master_data A data frame containing the verified master benchmark records.
+#' @param flagged_col The bare or quoted column name of the name column in `flagged_data`. Defaults to "ben_name".
+#' @param master_col The bare or quoted column name of the name column in `master_data`. Defaults to "ben_name".
+#' @param max_dist Integer specifying the maximum allowed string distance/edits to qualify as a match. Defaults to 3.
+#'
+#' @return A data frame matching the structure of `flagged_data`, with an additional 
+#'   `name_possible` character column containing the matched master dataset name (or NA if no match is found).
+#'
+#' @importFrom dplyr mutate rowwise ungroup
+#' @importFrom utils adist
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # create sample flagged data with typos
+#' bad_data <- data.frame(
+#'   uuid = c("id_1", "id_2", "id_3"),
+#'   ben_name = c("Jhn Doe", "Jane Smithh", "Xavier Mery"),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # create master reference data
+#' good_data <- data.frame(
+#'   ben_name = c("John Doe", "Jane Smith", "Robert Chen"),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # match names
+#' verified_df <- find_name_matches(bad_data, good_data, max_dist = 2)
+#' }
+find_name_matches <- function(
+    flagged_data, 
+    master_data, 
+    flagged_col = "ben_name", 
+    master_col = "ben_name", 
+    max_dist = 3
+) {
+  
+  # convert column arguments cleanly to character strings
+  flag_str <- as.character(substitute(flagged_col))
+  if (!flag_str %in% names(flagged_data)) flag_str <- flagged_col
+  
+  master_str <- as.character(substitute(master_col))
+  if (!master_str %in% names(master_data)) master_str <- master_col
+  
+  # extract the baseline master reference search array vector while dropping missing text values
+  master_pool <- unique(na.omit(as.character(master_data[[master_str]])))
+  
+  # define an atomic string matching lookahead function
+  match_single_name <- function(current_name, pool, threshold) {
+    if (is.na(current_name) || current_name == "") return(NA_character_)
+    
+    # calculate string edit distances across the entire reference array pool
+    distances <- as.vector(utils::adist(current_name, pool, ignore.case = TRUE))
+    
+    # identify position of minimum distance match
+    min_idx <- which.min(distances)
+    
+    # pick the name out if it falls within the specified edit boundary threshold
+    if (length(min_idx) > 0 && distances[min_idx] <= threshold) {
+      return(pool[min_idx])
+    }
+    
+    return(NA_character_)
+  }
+  
+  # run rowwise string matching and compile output dataframe structural arrays
+  result_data <- flagged_data %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      name_possible = match_single_name(
+        current_name = !!rlang::sym(flag_str), 
+        pool = master_pool, 
+        threshold = max_dist
+      )
+    ) %>%
+    dplyr::ungroup()
+  
+  return(result_data)
 }
 ```
 
