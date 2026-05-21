@@ -123,17 +123,5 @@ df_out <- df_out %>%
   
 # reg_num can be NA but distinct() would only pick one row
 
-df_clean <- df_out %>%
-  filter(is.na(reg_num)) %>%
-  bind_rows(
-    df_out %>%
-      filter(!is.na(reg_num)) %>%
-      distinct(reg_num, .keep_all = TRUE)
-  ) %>%
-  mutate(
-    village = gsub("_", " ", village),
-    county = gsub("_", " ", county),
-    ben_name = stringr::str_squish(ben_name) %>% stringr::str_to_title()
-  )
 
 }
