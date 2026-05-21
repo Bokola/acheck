@@ -1193,10 +1193,22 @@ df_out <- df_out %>%
     )
   )
 
-df_out <- df_out %>% 
-  mutate(
-    county = gsub("_", " ", county)
+df_out <- df_out %>%
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::any_of(c("county", "subcounty", "ward", "sublocation", "village")),
+      ~ gsub("_", " ", .x)
+    )
   )
+
+df_out <- df_out %>%
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::any_of(c("county", "subcounty", "ward", "sublocation", "village")),
+      ~ stringr::str_to_title(stringr::str_squish(.x))
+    )
+  )
+
 df_out <- df_out %>%
   dplyr::mutate(
     age_category = cut_numeric(HHH_age_calc),
