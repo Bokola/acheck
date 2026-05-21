@@ -131,6 +131,9 @@ After inflating the template
 ## pre-process unocha registration
 
 
+## get partner edit files
+
+
 
 ## Proportional to size random sample
 
