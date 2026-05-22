@@ -25,13 +25,13 @@ gen_verification_criteria_table <- function(
 
   
   # track total row count
-  total_rows <- nrow(criteria_df)
+  total_rows <- nrow(df)
   
   # track the indices where a new criteria block begins for main horizontal lines
   main_grid_rows <- c(7, 12, 15, 16)
   
   # process data internally to blank out sequential duplicate row labels for visual merge
-  display_df <- criteria_df %>%
+  display_df <- df %>%
     dplyr::mutate(
       Criteria = ifelse(Criteria == dplyr::lag(Criteria, default = ""), "", Criteria)
     )
