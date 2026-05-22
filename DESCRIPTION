@@ -1,6 +1,6 @@
 Package: acheck
 Title: ACTED Data Processing Helpers
-Version: 0.0.0.9000
+Version: 1.0
 Authors@R: 
     person("Basil", "Okola", , "okolabasilowiti@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1047-9700"))
