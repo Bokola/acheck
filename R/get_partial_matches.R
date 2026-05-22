@@ -15,8 +15,34 @@ get_partial_matches <- function(df, focal = "focal_name", beneficiary = "benef_n
   df %>%
     dplyr::rowwise() %>%
     dplyr::mutate(
-      is_partial = stringr::str_detect(.data[[focal]], fixed(.data[[beneficiary]])) | 
-        stringr::str_detect(.data[[beneficiary]], fixed(.data[[focal]]))
+      is_partial = {
+        f_str <- as.character(.data[[focal]])
+        b_str <- as.character(.data[[beneficiary]])
+        
+        # 1 basic substring check first using base r grepl to avoid vector length bugs
+        matched <- grepl(b_str, f_str, fixed = TRUE) | grepl(f_str, b_str, fixed = TRUE)
+        
+        # 2 if basic check fails look for out of order word inclusion
+        if (!matched) {
+          # clean and split both strings into words
+          f_words <- unlist(stringr::str_split(f_str, "\\s+"))
+          b_words <- unlist(stringr::str_split(b_str, "\\s+"))
+          
+          # identify which name is shorter by token count
+          if (length(f_words) <= length(b_words)) {
+            short_words <- f_words
+            long_str <- b_str
+          } else {
+            short_words <- b_words
+            long_str <- f_str
+          }
+          
+          # verify if every word of the shorter name exists in the longer string
+          matched <- all(purrr::map_lgl(short_words, ~ grepl(.x, long_str, fixed = TRUE)))
+        }
+        
+        matched
+      }
     ) %>% 
     dplyr::ungroup()
 }
