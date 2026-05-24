@@ -10,7 +10,8 @@ create_summary_table(
   labels = list(),
   group_by = NULL,
   strata = NULL,
-  percent_type = "column"
+  percent_type = "column",
+  dichotomous_as_continuous = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ create_summary_table(
 \item{strata}{character. stratifying variable}
 
 \item{percent_type}{character. percents by row or column}
+
+\item{dichotomous_as_continuous}{logical. treat binary 0/1 columns as continuous}
 }
 \value{
 a list of gtsummary object

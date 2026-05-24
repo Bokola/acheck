@@ -8,6 +8,7 @@
 #' @param group_by character. grouping variable
 #' @param strata character. stratifying variable
 #' @param percent_type character. percents by row or column
+#' @param dichotomous_as_continuous logical. treat binary 0/1 columns as continuous
 #'
 #' @returns a list of gtsummary object 
 #' @export
@@ -19,11 +20,17 @@ create_summary_table <- function(data,
                                  labels = list(), 
                                  group_by = NULL,
                                  strata = NULL,
-                                 percent_type = "column") {
-  
+                                 percent_type = "column",
+                                 dichotomous_as_continuous = FALSE) {
   
   # internal helper to build the base table
   build_summary <- function(df) {
+    # 1 build the type list dynamically based on the parameter
+    summary_types <- list(all_categorical() ~ "categorical")
+    if (dichotomous_as_continuous) {
+      summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
+    }
+
     df %>%
       # any_of(group_by) handles the case where group_by might be null
       dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
@@ -31,7 +38,7 @@ create_summary_table <- function(data,
         by = dplyr::any_of(group_by),
         label = labels,
         percent = percent_type,
-        type = list(all_categorical() ~ "categorical"),
+        type = summary_types,
         statistic = list(
           all_continuous() ~ "{mean} ({median})",
           all_categorical() ~ "{n} ({p}%)"
