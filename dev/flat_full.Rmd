@@ -397,6 +397,33 @@ clean_camp <- function(x, col_name = "ben_camp"){
 ```
 
 
+## get group columns
+
+```{r function-get_group_cols}
+#' Extract column names from a data dictionary based on structural boundaries
+#'
+#' @param dict dataframe representing the data dictionary
+#' @param name_col string. The column containing the variable names to extract
+#' @param vulnerability_df a dataframe with vulnerability categories
+#' @param vulnerability_class character vector of vulnerability class
+#'
+#' @returns a character vector of column names
+#' @export
+get_group_cols <- function(dict, vulnerability_df, vulnerability_class = "physio", name_col = "name") {
+  
+  df <- vulnerability_df %>%
+    dplyr::filter(
+      grepl(vulnerability_class, label, ignore.case = TRUE)
+    )
+  dict %>%
+    dplyr::filter(n >= df$n & n < df$n_end) %>%
+    # remove true NAs and any literal "NA" character strings
+    dplyr::filter(!is.na(!!rlang::sym(name_col)) & !!rlang::sym(name_col) != "NA") %>%
+    dplyr::pull(!!rlang::sym(name_col))
+}
+```
+
+
 ## find households in ESR data
 
 ```{r function-check_esr_registrations}
@@ -2704,6 +2731,43 @@ gen_verification_criteria_table <- function(
 }
 ```
 
+## get vulnerability criteria variables
+
+```{r function-get_vulnerability_data}
+
+#' get vulnerability criteria (physiological, nutritional etc)
+#'
+#' @returns a dataframe
+#' @importFrom dplyr filter mutate select lead
+#' @export
+#'
+#' @examples
+get_vulnerability_data <- function(){
+  df_dict <- acheck::survey %>%
+  filter(!grepl("note", type)) %>%
+  mutate(n = dplyr::row_number())
+
+vul_rows <- df_dict %>% 
+  filter(grepl("^physio|^social|^nutri|^food|gps", label, ignore.case = T)) %>%
+  select(type, name, label, n) %>%
+  mutate(n_end = lead(n),
+         n = n + 1) %>%
+  filter(!grepl("geo", type)) %>%
+  mutate(
+    n_end = case_when(
+      label == "Food consumption score" ~ 257,
+      label == "Nutritional vulnerability" ~ 265,
+      TRUE ~ n_end
+    )
+  ) %>%
+  filter(! n == n_end) %>%
+  filter(
+    grepl("^e", name)
+  )
+vul_rows
+}
+
+```
 
 
 <!--

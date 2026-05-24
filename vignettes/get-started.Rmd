@@ -100,6 +100,9 @@ After inflating the template
 ## recode beneficiary camps to known refugee camps
 
 
+## get group columns
+
+
 ## find households in ESR data
 
 ## get standard villages
@@ -169,6 +172,7 @@ After inflating the template
 
 ## Veification criteria table
 
+## get vulnerability criteria variables
 
 
 <!--
