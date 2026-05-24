@@ -389,7 +389,7 @@ clean_camp <- function(x, col_name = "ben_camp"){
         grepl("\\bna\\b", .x, ignore.case = TRUE) & grepl("HIAS", reforgp, ignore.case = T) ~ "Nairobi",
         grepl("^k", .x, ignore.case = TRUE) ~ "Kakuma",
         grepl("^nai|east|urban|umoja", .x, ignore.case = TRUE) ~ "Nairobi",
-        grepl("^daga|^ifo|f0|fo|^haga|^v|dad|daad", .x, ignore.case = TRUE) ~ "Daadab",
+        grepl("^daga|ley$|^ifo|f0|fo|^haga|^v|dad|daad", .x, ignore.case = TRUE) ~ "Daadab",
         TRUE ~ .x
       ))
     )
