@@ -12,6 +12,7 @@
 <url><loc>/reference/add_gt_to_word.html</loc></url>
 <url><loc>/reference/apply_corrections.html</loc></url>
 <url><loc>/reference/check_esr_registrations.html</loc></url>
+<url><loc>/reference/choices.html</loc></url>
 <url><loc>/reference/clean_camp.html</loc></url>
 <url><loc>/reference/clean_string.html</loc></url>
 <url><loc>/reference/collapse_villages.html</loc></url>
@@ -32,9 +33,11 @@
 <url><loc>/reference/get_distinct.html</loc></url>
 <url><loc>/reference/get_duplicates.html</loc></url>
 <url><loc>/reference/get_edit_data.html</loc></url>
+<url><loc>/reference/get_group_cols.html</loc></url>
 <url><loc>/reference/get_partial_matches.html</loc></url>
 <url><loc>/reference/get_pii.html</loc></url>
 <url><loc>/reference/get_standard_villages.html</loc></url>
+<url><loc>/reference/get_vulnerability_data.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/match_county_records.html</loc></url>
 <url><loc>/reference/normalize_names.html</loc></url>
@@ -44,6 +47,7 @@
 <url><loc>/reference/pull_kobo_data.html</loc></url>
 <url><loc>/reference/read_workbook.html</loc></url>
 <url><loc>/reference/standardize_names.html</loc></url>
+<url><loc>/reference/survey.html</loc></url>
 <url><loc>/reference/verification_criteria.html</loc></url>
 <url><loc>/reference/write_list_to_excel.html</loc></url>
 </urlset>
