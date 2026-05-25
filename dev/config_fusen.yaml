@@ -3,6 +3,7 @@ flat_full.Rmd:
   state: active
   R:
   - R/add_gt_to_word.R
+  - R/clean_username.R
   - R/export_list_to_word.R
   - R/create_summary_table.R
   - R/create_listing_table.R

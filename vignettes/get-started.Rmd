@@ -88,6 +88,10 @@ After inflating the template
 -  This test code will automatically be added in the "tests/testthat/" directory
 -->
 
+## clean names
+
+
+
 ## export list of gt objects/dataframes to word
 
 

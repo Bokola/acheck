@@ -192,6 +192,25 @@ test_that("add_gt_to_word works correctly under different conditions", {
 })
 ```
 
+## clean names
+
+```{r function-clean_username}
+#' Clean names by deleting extra spaces and convert to title case
+#'
+#' @param x character vector of names to clean
+#'
+#' @returns a vector
+#' @export
+#'
+#' @examples
+#' \dontrun{clean_username()}
+clean_username <- function(x){
+  x %>% stringr::str_to_title(stringr::str_squish(.))
+}
+```
+
+
+
 ## export list of gt objects/dataframes to word
 
 ```{r  function-export_list_to_word}
