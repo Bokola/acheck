@@ -1077,32 +1077,40 @@ get_partial_matches <- function(df, focal = "focal_name", beneficiary = "benef_n
     dplyr::rowwise() %>%
     dplyr::mutate(
       is_partial = {
-        f_str <- as.character(.data[[focal]])
-        b_str <- as.character(.data[[beneficiary]])
+        f_raw <- .data[[focal]]
+        b_raw <- .data[[beneficiary]]
         
-        # 1 basic substring check first using base r grepl to avoid vector length bugs
-        matched <- grepl(b_str, f_str, fixed = TRUE) | grepl(f_str, b_str, fixed = TRUE)
-        
-        # 2 if basic check fails look for out of order word inclusion
-        if (!matched) {
-          # clean and split both strings into words
-          f_words <- unlist(stringr::str_split(f_str, "\\s+"))
-          b_words <- unlist(stringr::str_split(b_str, "\\s+"))
+        # 1 early exit check for missing values or empty strings
+        if (is.na(f_raw) || is.na(b_raw) || f_raw == "" || b_raw == "" || f_raw == "NA" || b_raw == "NA") {
+          FALSE
+        } else {
+          f_str <- as.character(f_raw)
+          b_str <- as.character(b_raw)
           
-          # identify which name is shorter by token count
-          if (length(f_words) <= length(b_words)) {
-            short_words <- f_words
-            long_str <- b_str
+          # 2 basic substring check first using base r grepl to avoid vector length bugs
+          matched <- grepl(b_str, f_str, fixed = TRUE) | grepl(f_str, b_str, fixed = TRUE)
+          
+          # 3 if basic check fails look for out of order word inclusion
+          if (isTRUE(matched)) {
+            matched
           } else {
-            short_words <- b_words
-            long_str <- f_str
+            # clean and split both strings into words
+            f_words <- unlist(stringr::str_split(f_str, "\\s+"))
+            b_words <- unlist(stringr::str_split(b_str, "\\s+"))
+            
+            # identify which name is shorter by token count
+            if (length(f_words) <= length(b_words)) {
+              short_words <- f_words
+              long_str <- b_str
+            } else {
+              short_words <- b_words
+              long_str <- f_str
+            }
+            
+            # verify if every word of the shorter name exists in the longer string
+            all(purrr::map_lgl(short_words, ~ grepl(.x, long_str, fixed = TRUE)))
           }
-          
-          # verify if every word of the shorter name exists in the longer string
-          matched <- all(purrr::map_lgl(short_words, ~ grepl(.x, long_str, fixed = TRUE)))
         }
-        
-        matched
       }
     ) %>% 
     dplyr::ungroup()
