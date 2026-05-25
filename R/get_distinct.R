@@ -6,7 +6,7 @@
 #' @param vars_to_check character vector of columns to check
 #' @param phone_var character vector of phone number column
 #' @param name_var character vector of respondent name
-#' @importFrom dplyr group_by across n n_distinct filter any_of ungroup distinct select pull row_number bind_rows 
+#' @importFrom dplyr group_by across n n_distinct filter any_of ungroup distinct select pull row_number bind_rows slice
 #' @returns dataframe
 #' @export
 #'
@@ -18,18 +18,11 @@ get_distinct <- function(
     phone_var = "ben_number",
     name_var = "benef_name"
 ){
-  # identify the ids or row indices of all duplicates first
-  # we use your duplicate logic to find what to exclude
-  duplicates <- x %>%
-    # use row_number to keep track of exactly which rows are flagged
+  # 1 capture exact duplicates and instances of shared name with different phones
+  anomalies <- x %>%
     mutate(temp_id = row_number()) %>%
     {
-      # find rows that fail any of the duplicate checks
       bind_rows(
-        # scenario 1: shared phone, different names
-        group_by(., across(any_of(phone_var))) %>% 
-          filter(n() > 1 & n_distinct(across(any_of(name_var))) > 1),
-        
         # scenario 2: shared name, different phones
         group_by(., across(any_of(name_var))) %>% 
           filter(n() > 1 & n_distinct(across(any_of(phone_var))) > 1),
@@ -39,12 +32,21 @@ get_distinct <- function(
           filter(n() > 1)
       )
     } %>%
-    pull(temp_id) %>%
-    unique()
+    distinct(temp_id, .keep_all = TRUE)
   
-  # return the original data minus the duplicate rows
-  x %>%
+  # 2 isolate clean rows that don't participate in those loops
+  clean_data <- x %>%
     mutate(temp_id = row_number()) %>%
-    filter(!(temp_id %in% duplicates)) %>%
+    filter(!(temp_id %in% anomalies$temp_id))
+  
+  # 3 resolve the anomalies by keeping just the first instance per name
+  resolved_anomalies <- anomalies %>%
+    group_by(across(any_of(name_var))) %>%
+    slice(1) %>%
+    ungroup()
+  
+  # 4 bind clean entries and resolved entries back together
+  bind_rows(clean_data, resolved_anomalies) %>%
+    arrange(temp_id) %>%
     select(-temp_id)
 }
