@@ -138,6 +138,9 @@ After inflating the template
 ## pre-process unocha registration
 
 
+## slice reg data
+
+
 ## get partner edit files
 
 

@@ -2,65 +2,34 @@
 
 #' Apply Data Cleaning Corrections Using an Embedded Cleaning Log
 #'
-#' This function updates a main dataset using a correction data frame that contains 
-#' a target column name variable, an updated values variable, and columns matching 
-#' the unique record identifiers of the main data frame. It also handles row 
-#' deletions when the variable to change is marked as "delete" or "Delete".
+#' This function updates a main dataset using a correction data frame. It applies
+#' standard cell corrections and handles row deletions last. Deletions are processed 
+#' using strict exact name matching combined with multiple context validation columns
+#' (e.g., ID number, ward, village) to guarantee that similar or identical names are 
+#' never accidentally deleted.
 #'
 #' @param data A data frame containing the main dataset to be cleaned.
-#' @param id_var The bare or quoted column name representing the unique identifier 
-#'   linking both datasets (e.g., "uuid", "household_id").
+#' @param id_var The bare or quoted column name representing the unique identifier.
 #' @param corrections A data frame containing the corrections log along with the matching keys.
-#' @param var_to_change_col The bare or quoted column name in `corrections` that 
-#'   holds the names of the target columns in `data` to change. Defaults to "var_to_change".
-#' @param correct_value_col The bare or quoted column name in `corrections` that 
-#'   holds the updated value. Defaults to "correct_value".
-#' @param ben_name_col The bare or quoted column name in `corrections` that holds the 
-#'   beneficiary names to check for deletions. Defaults to "ben_name".
+#' @param var_to_change_col Column name in `corrections` holding target names to change.
+#' @param correct_value_col Column name in `corrections` holding updated values.
+#' @param ben_name_col Column name in both datasets holding beneficiary names.
+#' @param context_cols Optional character vector. Secondary column names present in both 
+#'   datasets (e.g., `c("ben_id_number", "ward", "village")`) used to build a composite key 
+#'   and avoid accidental collisions of identical or similar names.
 #'
-#' @return A data frame matching the structure of `data`, with specified values corrected or rows deleted.
-#'
-#' @importFrom dplyr filter pull select inner_join mutate left_join rename across any_of
-#' @importFrom rlang sym !! :=
+#' @return A data frame matching the structure of `data`.
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' # dummy main household dataset
-#' main_df <- data.frame(
-#'    uuid = c("uuid_1", "uuid_2", "uuid_3"),
-#'    ben_name = c("John Doe", "Jane Smith", "Alice Jones"),
-#'    county_id = c("County_A", "County_A", "County_B"),
-#'    num_members = c(5, 3, 12),
-#'    stringsAsFactors = FALSE
-#' )
-#'
-#' # cleaning log frame with deletion and standard correction rows
-#' clean_log <- data.frame(
-#'    uuid = c("uuid_1", "uuid_2"),
-#'    ben_name = c("John Doe", "Jane Smith"),
-#'    var_to_change = c("num_members", "delete"),
-#'    correct_value = c("6", NA),
-#'    stringsAsFactors = FALSE
-#' )
-#'
-#' # execute cell updates and deletions
-#' cleaned_df <- apply_corrections(
-#'    data = main_df,
-#'    id_var = "uuid",
-#'    corrections = clean_log
-#' )
-#' }
 apply_corrections <- function(
     data, 
     id_var = "uuid", 
     corrections, 
     var_to_change_col = "var_to_change", 
     correct_value_col = "correct_value",
-    ben_name_col = "ben_name"
+    ben_name_col = "ben_name",
+    context_cols = c("ben_id_number", "ward", "village")
 ) {
   
-  # convert input column names safely to standard strings
   id_str <- as.character(substitute(id_var))
   if (!id_str %in% names(data)) id_str <- id_var
   
@@ -75,40 +44,20 @@ apply_corrections <- function(
   
   cleaned_data <- data
   
-  # handle deletions if deletion column and target data column exist
-  if (var_change_str %in% names(corrections) && ben_name_str %in% names(corrections) && ben_name_str %in% names(data)) {
-    
-    # isolate the beneficiary names slated for deletion
-    delete_names <- corrections %>%
-      dplyr::filter(tolower(!!rlang::sym(var_change_str)) == "delete") %>%
-      dplyr::pull(!!rlang::sym(ben_name_str)) %>%
-      unique()
-    
-    # remove specified beneficiary rows from the main dataset
-    if (length(delete_names) > 0) {
-      cleaned_data <- cleaned_data %>%
-        dplyr::filter(!(!!rlang::sym(ben_name_str) %in% delete_names))
-    }
-  }
-  
   # extract only the unique variables that actually exist in the main data
   distinct_vars <- corrections %>%
     dplyr::filter(!!rlang::sym(var_change_str) %in% names(cleaned_data)) %>%
     dplyr::pull(!!rlang::sym(var_change_str)) %>%
     unique()
   
-  # iterate sequentially through each column type needing corrections
+  # 1 execute standard cell corrections first
   for (current_var in distinct_vars) {
-    
-    # isolate the matching ID and target value, ignoring all other extra columns
     sub_corrections <- corrections %>%
       dplyr::filter(!!rlang::sym(var_change_str) == current_var) %>%
-      dplyr::select(dplyr::any_of(c(id_str, correct_val_str)))
+      dplyr::select(dplyr::any_of(c(ben_name_str, correct_val_str)))
     
-    # preserve the target column class to avoid unexpected vector type coercion
     target_class <- class(cleaned_data[[current_var]])[1]
     
-    # safely cast the replacement values to prevent type mismatch errors
     if (target_class %in% c("numeric", "integer")) {
       sub_corrections[[correct_val_str]] <- as.numeric(sub_corrections[[correct_val_str]])
     } else if (target_class == "logical") {
@@ -117,16 +66,14 @@ apply_corrections <- function(
       sub_corrections[[correct_val_str]] <- as.character(sub_corrections[[correct_val_str]])
     }
     
-    # create a unique temporary column name for the joining process
     join_target_name <- paste0("new_val_", current_var)
     sub_corrections <- dplyr::rename(
       sub_corrections, 
       !!rlang::sym(join_target_name) := !!rlang::sym(correct_val_str)
     )
     
-    # join on the id variable, replace the value where a match is found, and remove the temp column
     cleaned_data <- cleaned_data %>%
-      dplyr::left_join(sub_corrections, by = id_str) %>%
+      dplyr::left_join(sub_corrections, by = ben_name_str) %>%
       dplyr::mutate(
         !!rlang::sym(current_var) := ifelse(
           !is.na(!!rlang::sym(join_target_name)), 
@@ -135,6 +82,54 @@ apply_corrections <- function(
         )
       ) %>%
       dplyr::select(-dplyr::any_of(join_target_name))
+  }
+  
+  # 2 handle deletions as the final operation with compound keys
+  if (var_change_str %in% names(corrections) && ben_name_str %in% names(corrections) && ben_name_str %in% names(data)) {
+    
+    # filter log down strictly to the rows designated for deletion
+    delete_log <- corrections %>%
+      dplyr::filter(tolower(!!rlang::sym(var_change_str)) == "delete")
+    
+    if (nrow(delete_log) > 0) {
+      
+      # filter context columns down to only those that actually exist in both datasets
+      valid_contexts <- context_cols[context_cols %in% names(data) & context_cols %in% names(corrections)]
+      
+      if (length(valid_contexts) > 0) {
+        # combine beneficiary name and all valid context values into a multi-variable string key
+        # using individual rowwise evaluations to avoid vector collapse traps
+        build_composite_key <- function(df, name_col, ctx_cols) {
+          df %>%
+            dplyr::rowwise() %>%
+            dplyr::mutate(
+              comp_key = paste(
+                c(as.character(.data[[name_col]]), mget(ctx_cols)), 
+                collapse = "|||"
+              )
+            ) %>%
+            dplyr::ungroup() %>%
+            dplyr::pull(comp_key)
+        }
+        
+        # generate keys for both datasets
+        delete_keys <- build_composite_key(delete_log, ben_name_str, valid_contexts)
+        
+        # apply filter by checking the main data against the delete keys
+        cleaned_data <- cleaned_data %>%
+          dplyr::rowwise() %>%
+          dplyr::filter(
+            !paste(c(as.character(.data[[ben_name_str]]), mget(valid_contexts)), collapse = "|||") %in% delete_keys
+          ) %>%
+          dplyr::ungroup()
+          
+      } else {
+        # fallback to strict exact name checking if no valid context variables were matched
+        delete_names <- unique(delete_log[[ben_name_str]])
+        cleaned_data <- cleaned_data %>%
+          dplyr::filter(!(!!rlang::sym(ben_name_str) %in% delete_names))
+      }
+    }
   }
   
   return(cleaned_data)

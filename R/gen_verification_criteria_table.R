@@ -9,16 +9,18 @@
 #' that fully enclose column headers with explicit bold top and bottom lines
 #'
 #' @param df dataframe of verification criteria
+#' @param title character vector of title
 #' @return A styled gt table object containing the merged two column layout with 
 #' fully enclosed bold grid line formatting
 #'
 #' @importFrom tibble tibble
 #' @importFrom dplyr mutate lag
-#' @importFrom gt gt cols_label tab_header tab_source_note pct tab_options px cells_body tab_style cell_borders cells_column_labels
+#' @importFrom gt gt cols_label tab_header tab_source_note pct tab_options px cells_body tab_style cell_borders cells_column_labels cell_fill
 #'
 #' @export
 gen_verification_criteria_table <- function(
-    df = verification_criteria
+    df = verification_criteria,
+    title = "Vulnerability Criteria"
     ) {
   
   # instantiate the explicit two column data frame mapping
@@ -40,7 +42,7 @@ gen_verification_criteria_table <- function(
   styled_table <- display_df %>%
     gt::gt() %>%
     gt::tab_header(
-      title = "Verification Criteria & Target Indicators Matrix"
+      title = title
     ) %>%
     gt::cols_label(
       Criteria = "Criteria",
@@ -61,11 +63,20 @@ gen_verification_criteria_table <- function(
       locations = gt::cells_body(rows = 1:total_rows)
     ) %>%
     
+    # apply acted deep blue background fill with white text for column labels
+    gt::tab_style(
+      style = list(
+        gt::cell_fill(color = "#0B1054"),
+        gt::cell_text(color = "white", weight = "bold")
+      ),
+      locations = gt::cells_column_labels(columns = c("Criteria", "Indicator"))
+    ) %>%
+    
     # overlay bold main horizontal block dividers within the body row structures
     gt::tab_style(
       style = gt::cell_borders(
         sides = "top",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.25),
         style = "solid"
       ),
@@ -76,7 +87,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "top",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.5),
         style = "solid"
       ),
@@ -87,7 +98,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "bottom",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.5),
         style = "solid"
       ),
@@ -98,7 +109,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "bottom",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.5),
         style = "solid"
       ),
@@ -109,7 +120,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "right",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2),
         style = "solid"
       ),
@@ -123,7 +134,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "left",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.5),
         style = "solid"
       ),
@@ -137,7 +148,7 @@ gen_verification_criteria_table <- function(
     gt::tab_style(
       style = gt::cell_borders(
         sides = "right",
-        color = "#2c3e50",
+        color = "#0B1054",
         weight = gt::px(2.5),
         style = "solid"
       ),

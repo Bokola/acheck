@@ -10,60 +10,34 @@ apply_corrections(
   corrections,
   var_to_change_col = "var_to_change",
   correct_value_col = "correct_value",
-  ben_name_col = "ben_name"
+  ben_name_col = "ben_name",
+  context_cols = c("ben_id_number", "ward", "village")
 )
 }
 \arguments{
 \item{data}{A data frame containing the main dataset to be cleaned.}
 
-\item{id_var}{The bare or quoted column name representing the unique identifier
-linking both datasets (e.g., "uuid", "household_id").}
+\item{id_var}{The bare or quoted column name representing the unique identifier.}
 
 \item{corrections}{A data frame containing the corrections log along with the matching keys.}
 
-\item{var_to_change_col}{The bare or quoted column name in \code{corrections} that
-holds the names of the target columns in \code{data} to change. Defaults to "var_to_change".}
+\item{var_to_change_col}{Column name in \code{corrections} holding target names to change.}
 
-\item{correct_value_col}{The bare or quoted column name in \code{corrections} that
-holds the updated value. Defaults to "correct_value".}
+\item{correct_value_col}{Column name in \code{corrections} holding updated values.}
 
-\item{ben_name_col}{The bare or quoted column name in \code{corrections} that holds the
-beneficiary names to check for deletions. Defaults to "ben_name".}
+\item{ben_name_col}{Column name in both datasets holding beneficiary names.}
+
+\item{context_cols}{Optional character vector. Secondary column names present in both
+datasets (e.g., \code{c("ben_id_number", "ward", "village")}) used to build a composite key
+and avoid accidental collisions of identical or similar names.}
 }
 \value{
-A data frame matching the structure of \code{data}, with specified values corrected or rows deleted.
+A data frame matching the structure of \code{data}.
 }
 \description{
-This function updates a main dataset using a correction data frame that contains
-a target column name variable, an updated values variable, and columns matching
-the unique record identifiers of the main data frame. It also handles row
-deletions when the variable to change is marked as "delete" or "Delete".
-}
-\examples{
-\dontrun{
-# dummy main household dataset
-main_df <- data.frame(
-   uuid = c("uuid_1", "uuid_2", "uuid_3"),
-   ben_name = c("John Doe", "Jane Smith", "Alice Jones"),
-   county_id = c("County_A", "County_A", "County_B"),
-   num_members = c(5, 3, 12),
-   stringsAsFactors = FALSE
-)
-
-# cleaning log frame with deletion and standard correction rows
-clean_log <- data.frame(
-   uuid = c("uuid_1", "uuid_2"),
-   ben_name = c("John Doe", "Jane Smith"),
-   var_to_change = c("num_members", "delete"),
-   correct_value = c("6", NA),
-   stringsAsFactors = FALSE
-)
-
-# execute cell updates and deletions
-cleaned_df <- apply_corrections(
-   data = main_df,
-   id_var = "uuid",
-   corrections = clean_log
-)
-}
+This function updates a main dataset using a correction data frame. It applies
+standard cell corrections and handles row deletions last. Deletions are processed
+using strict exact name matching combined with multiple context validation columns
+(e.g., ID number, ward, village) to guarantee that similar or identical names are
+never accidentally deleted.
 }

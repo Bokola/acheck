@@ -4,10 +4,15 @@
 \alias{gen_verification_criteria_table}
 \title{Create the target beneficiary verification criteria and indicators summary}
 \usage{
-gen_verification_criteria_table(df = verification_criteria)
+gen_verification_criteria_table(
+  df = verification_criteria,
+  title = "Vulnerability Criteria"
+)
 }
 \arguments{
 \item{df}{dataframe of verification criteria}
+
+\item{title}{character vector of title}
 }
 \value{
 A styled gt table object containing the merged two column layout with

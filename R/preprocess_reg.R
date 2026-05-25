@@ -136,12 +136,7 @@ df_out <- df_out %>%
 
 # registration started May 3 ----------------------------------------------
 
-df_out <- df_out %>% 
-  dplyr::filter(
-#     start of reg
-    start >= lubridate::date("2026-05-03")
-  ) %>%
-  dplyr::filter(!(start < lubridate::date("2026-05-07") & grepl("SND", enum_egency))) 
+ 
   
   # distinct(
   #   ben_name, reg_num, ben_id_number, .keep_all = T
