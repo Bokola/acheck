@@ -16,4 +16,5 @@ slice_reg <- function(df){
     start >= lubridate::date("2026-05-03")
   ) %>%
   dplyr::filter(!(start <= lubridate::date("2026-05-06") & grepl("SND", enum_egency)))
+  df_out
 }
