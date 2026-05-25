@@ -10,5 +10,5 @@
 #' @examples
 #' \dontrun{clean_username()}
 clean_username <- function(x){
-  x %>% stringr::str_to_title(stringr::str_squish(.))
+  stringr::str_to_title(stringr::str_squish(x))
 }

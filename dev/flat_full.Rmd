@@ -205,7 +205,7 @@ test_that("add_gt_to_word works correctly under different conditions", {
 #' @examples
 #' \dontrun{clean_username()}
 clean_username <- function(x){
-  x %>% stringr::str_to_title(stringr::str_squish(.))
+  stringr::str_to_title(stringr::str_squish(x))
 }
 ```
 
