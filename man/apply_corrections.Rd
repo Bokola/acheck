@@ -37,7 +37,7 @@ A data frame matching the structure of \code{data}.
 \description{
 This function updates a main dataset using a correction data frame. It applies
 standard cell corrections and handles row deletions last. Deletions are processed
-using strict exact name matching combined with multiple context validation columns
-(e.g., ID number, ward, village) to guarantee that similar or identical names are
-never accidentally deleted.
+using strict unique UUID matching if a true uuid column is present, falling back to
+exact name matching combined with multiple context validation columns if a general
+non-unique identifier or name-only tracking is used.
 }

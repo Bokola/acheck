@@ -2144,9 +2144,9 @@ draw_systematic_within_villages <- function(
 #'
 #' This function updates a main dataset using a correction data frame. It applies
 #' standard cell corrections and handles row deletions last. Deletions are processed 
-#' using strict exact name matching combined with multiple context validation columns
-#' (e.g., ID number, ward, village) to guarantee that similar or identical names are 
-#' never accidentally deleted.
+#' using strict unique UUID matching if a true uuid column is present, falling back to 
+#' exact name matching combined with multiple context validation columns if a general 
+#' non-unique identifier or name-only tracking is used.
 #'
 #' @param data A data frame containing the main dataset to be cleaned.
 #' @param id_var The bare or quoted column name representing the unique identifier.
@@ -2227,53 +2227,68 @@ apply_corrections <- function(
   # 2 handle deletions as the final operation with compound keys
   if (var_change_str %in% names(corrections) && ben_name_str %in% names(corrections) && ben_name_str %in% names(data)) {
     
-    # filter log down strictly to the rows designated for deletion
+    # filter log down strictly to the rows designated for deletion using case insensitive grepl
     delete_log <- corrections %>%
-      dplyr::filter(tolower(!!rlang::sym(var_change_str)) == "delete")
+      dplyr::filter(grepl("delete", !!rlang::sym(var_change_str), ignore.case = TRUE))
     
     if (nrow(delete_log) > 0) {
       
-      # filter context columns down to only those that actually exist in both datasets
-      valid_contexts <- context_cols[context_cols %in% names(data) & context_cols %in% names(corrections)]
-      
-      if (length(valid_contexts) > 0) {
-        # combine beneficiary name and all valid context values into a multi-variable string key
-        # using individual rowwise evaluations to avoid vector collapse traps
-        build_composite_key <- function(df, name_col, ctx_cols) {
-          df %>%
-            dplyr::rowwise() %>%
-            dplyr::mutate(
-              comp_key = paste(
-                c(as.character(.data[[name_col]]), mget(ctx_cols)), 
-                collapse = "|||"
-              )
-            ) %>%
-            dplyr::ungroup() %>%
-            dplyr::pull(comp_key)
-        }
+      # premium bypass: only use direct ID deletion if it is explicitly a unique uuid column
+      if (tolower(id_str) == "uuid" && id_str %in% names(corrections) && id_str %in% names(data)) {
         
-        # generate keys for both datasets
-        delete_keys <- build_composite_key(delete_log, ben_name_str, valid_contexts)
+        delete_ids <- delete_log %>%
+          dplyr::pull(!!rlang::sym(id_str)) %>%
+          unique()
         
-        # apply filter by checking the main data against the delete keys
         cleaned_data <- cleaned_data %>%
-          dplyr::rowwise() %>%
-          dplyr::filter(
-            !paste(c(as.character(.data[[ben_name_str]]), mget(valid_contexts)), collapse = "|||") %in% delete_keys
-          ) %>%
-          dplyr::ungroup()
-          
+          dplyr::filter(!(!!rlang::sym(id_str) %in% delete_ids))
+        
       } else {
-        # fallback to strict exact name checking if no valid context variables were matched
-        delete_names <- unique(delete_log[[ben_name_str]])
-        cleaned_data <- cleaned_data %>%
-          dplyr::filter(!(!!rlang::sym(ben_name_str) %in% delete_names))
+        # traditional fallback: filter context columns down to only those that actually exist in both datasets
+        # this ensures that if id_str is "ben_id_number", it gets lumped safely into the compound validation checks
+        all_potential_contexts <- unique(c(id_str, context_cols))
+        valid_contexts <- all_potential_contexts[all_potential_contexts %in% names(data) & all_potential_contexts %in% names(corrections)]
+        
+        if (length(valid_contexts) > 0) {
+          # combine beneficiary name and all valid context values into a multi-variable string key
+          # using individual rowwise evaluations to avoid vector collapse traps
+          build_composite_key <- function(df, name_col, ctx_cols) {
+            df %>%
+              dplyr::rowwise() %>%
+              dplyr::mutate(
+                comp_key = paste(
+                  c(as.character(.data[[name_col]]), mget(ctx_cols)), 
+                  collapse = "|||"
+                )
+              ) %>%
+              dplyr::ungroup() %>%
+              dplyr::pull(comp_key)
+          }
+          
+          # generate keys for both datasets
+          delete_keys <- build_composite_key(delete_log, ben_name_str, valid_contexts)
+          
+          # apply filter by checking the main data against the delete keys
+          cleaned_data <- cleaned_data %>%
+            dplyr::rowwise() %>%
+            dplyr::filter(
+              !paste(c(as.character(.data[[ben_name_str]]), mget(valid_contexts)), collapse = "|||") %in% delete_keys
+            ) %>%
+            dplyr::ungroup()
+          
+        } else {
+          # fallback to strict exact name checking if no valid context variables were matched
+          delete_names <- unique(delete_log[[ben_name_str]])
+          cleaned_data <- cleaned_data %>%
+            dplyr::filter(!(!!rlang::sym(ben_name_str) %in% delete_names))
+        }
       }
     }
   }
   
   return(cleaned_data)
 }
+
 ```
 
 ## read excel workbook
