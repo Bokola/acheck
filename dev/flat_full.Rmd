@@ -277,11 +277,8 @@ export_list_to_word <- function(table_list, doc_path) {
 #' @param report_median logical. whether to include the median alongside the mean for continuous variables
 #' @param label_characteristic character. custom header text for the characteristic column
 #'
-#' @returns a list of gtsummary object 
+#' @returns a flextable object 
 #' @export
-#'
-#' @examples
-#'\dontrun{create_summary_table()}
 create_summary_table <- function(data, 
                                  cols = dplyr::everything(), 
                                  labels = list(), 
@@ -326,17 +323,12 @@ create_summary_table <- function(data,
       gtsummary::bold_labels() %>%
       # re write the characteristic column header to the custom label string
       gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**")) %>%
-    
-    # start added
-    
-    # remove the automated gtsummary continuous footnote
+      # remove the automated gtsummary continuous footnote
       gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
       # convert to native flextable for rock-solid Word document processing
       gtsummary::as_flex_table() %>%
       # remove the remaining footnote row block from the layout footer
       flextable::delete_part(part = "footer")
-      
-      # end added
   }
   
   # logic to handle stratification
@@ -2675,7 +2667,7 @@ normalize_names <- function(x) {
 #'
 #' @importFrom tibble tibble
 #' @importFrom dplyr mutate lag
-#' @importFrom flextable flextable as_paragraph as_chunk compose align width border_outer border_inner_h border_inner_v bg color bold font set_caption
+#' @importFrom flextable flextable as_paragraph as_chunk align valign width border_outer border_inner_h border_inner_v bg color bold font set_caption delete_part add_footer_lines
 #' @importFrom officer fp_border fp_text
 #'
 #' @export
@@ -2726,17 +2718,6 @@ gen_verification_criteria_table <- function(
       values = "Acronym Definitions: OTP - Outpatient Therapeutic Program; SFP - Supplementary Feeding Program; FCS - Food Consumption Score; HHs - Households"
     ) %>%
     flextable::font(fontname = "Arial", part = "footer")
-  
-  # append table title using native word paragraph formatting if present
-  if (!is.null(title) && nzchar(as.character(title))) {
-    styled_table <- styled_table %>%
-      flextable::set_caption(
-        caption = flextable::as_paragraph(
-          flextable::as_chunk(title, props = officer::fp_text(bold = TRUE, font.size = 12))
-        ),
-        style = "Table Caption"
-      )
-  }
   
   return(styled_table)
 }

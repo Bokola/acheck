@@ -15,7 +15,7 @@
 #'
 #' @importFrom tibble tibble
 #' @importFrom dplyr mutate lag
-#' @importFrom flextable flextable as_paragraph as_chunk compose align width border_outer border_inner_h border_inner_v bg color bold font set_caption
+#' @importFrom flextable flextable as_paragraph as_chunk align valign width border_outer border_inner_h border_inner_v bg color bold font set_caption delete_part add_footer_lines
 #' @importFrom officer fp_border fp_text
 #'
 #' @export
@@ -66,17 +66,6 @@ gen_verification_criteria_table <- function(
       values = "Acronym Definitions: OTP - Outpatient Therapeutic Program; SFP - Supplementary Feeding Program; FCS - Food Consumption Score; HHs - Households"
     ) %>%
     flextable::font(fontname = "Arial", part = "footer")
-  
-  # append table title using native word paragraph formatting if present
-  if (!is.null(title) && nzchar(as.character(title))) {
-    styled_table <- styled_table %>%
-      flextable::set_caption(
-        caption = flextable::as_paragraph(
-          flextable::as_chunk(title, props = officer::fp_text(bold = TRUE, font.size = 12))
-        ),
-        style = "Table Caption"
-      )
-  }
   
   return(styled_table)
 }
