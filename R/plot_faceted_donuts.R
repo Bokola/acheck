@@ -9,7 +9,7 @@
 #'
 #' @returns a patchwork grid assembly of donut plots
 #' @importFrom dplyr filter count mutate pull
-#' @importFrom ggplot2 ggplot aes geom_col geom_text scale_fill_manual theme_void theme coord_polar xlim labs element_text
+#' @importFrom ggplot2 ggplot aes geom_col geom_text scale_fill_manual theme_void theme coord_polar xlim labs element_text position_stack
 #' @importFrom patchwork wrap_plots
 #' @importFrom stringr str_to_title
 #' @export
@@ -61,17 +61,20 @@ plot_faceted_donuts <- function(data,
       )
     
     ggplot2::ggplot(plot_df, ggplot2::aes(x = 3, y = pct, fill = .data[[fill_col]])) +
+      # maintain donut thickness between radius limits 2 and 3.5
       ggplot2::geom_col(width = 1, color = "white", size = 0.5) +
+      # push text radius position out beyond the chart area boundary
       ggplot2::geom_text(
-        ggplot2::aes(label = pct_label),
+        ggplot2::aes(x = 4.2, label = pct_label),
         position = ggplot2::position_stack(vjust = 0.5),
         color = "black",
         fontface = "bold",
-        size = 3
+        size = 2.8
       ) +
       ggplot2::scale_fill_manual(values = palette) +
       ggplot2::coord_polar(theta = "y") +
-      ggplot2::xlim(c(1, 3.5)) +
+      # expand structural coordinate canvas limits to prevent text clipping
+      ggplot2::xlim(c(1, 5.2)) +
       ggplot2::labs(title = stringr::str_to_title(group)) +
       ggplot2::theme_void() +
       ggplot2::theme(

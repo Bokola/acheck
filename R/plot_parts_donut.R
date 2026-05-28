@@ -7,8 +7,9 @@
 #' @param palette character vector. hex color values
 #'
 #' @returns a ggplot object
-#' @importFrom dplyr count mutate
-#' @importFrom ggplot2 ggplot aes geom_col geom_text scale_fill_manual theme_void theme coord_polar xlim
+#' @importFrom dplyr count mutate across all_of
+#' @importFrom ggplot2 ggplot aes geom_col geom_text scale_fill_manual theme_void theme coord_polar xlim position_stack
+#' @importFrom scales percent
 #' @export
 #' @examples
 #' \dontrun{plot_parts_donut()}
@@ -29,9 +30,11 @@ plot_parts_donut <- function(data, fill_col, palette = c("#81C784", "#FFB74D", "
     )
   
   ggplot2::ggplot(plot_df, ggplot2::aes(x = 3, y = pct, fill = .data[[fill_col]])) +
-    ggplot2::geom_col(width = 1) +
+    # maintain stable donut ring layout thickness
+    ggplot2::geom_col(width = 1, color = "white", size = 0.5) +
+    # shift text position horizontally outward beyond the main donut frame
     ggplot2::geom_text(
-      ggplot2::aes(label = pct_label),
+      ggplot2::aes(x = 4.2, label = pct_label),
       position = ggplot2::position_stack(vjust = 0.5),
       color = "black",
       fontface = "bold",
@@ -39,7 +42,8 @@ plot_parts_donut <- function(data, fill_col, palette = c("#81C784", "#FFB74D", "
     ) +
     ggplot2::scale_fill_manual(values = palette) +
     ggplot2::coord_polar(theta = "y") +
-    ggplot2::xlim(c(1, 3.5)) +
+    # expand the coordinate map boundary to give labels complete breathing room
+    ggplot2::xlim(c(1, 5.2)) +
     ggplot2::theme_void() +
     ggplot2::theme(
       legend.position = "none"
