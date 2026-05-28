@@ -36,7 +36,7 @@ create_summary_table(
 \item{label_characteristic}{character. custom header text for the characteristic column}
 }
 \value{
-a flextable object
+a gtsummary object that renders across all formats natively
 }
 \description{
 create a \code{gtsummary} table
