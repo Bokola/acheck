@@ -64,7 +64,9 @@
 <span>  group_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  percent_type <span class="op">=</span> <span class="st">"column"</span>,</span>
-<span>  dichotomous_as_continuous <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  dichotomous_as_continuous <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  report_median <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  label_characteristic <span class="op">=</span> <span class="st">"Characteristic"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +100,14 @@
 
 <dt id="arg-dichotomous-as-continuous">dichotomous_as_continuous<a class="anchor" aria-label="anchor" href="#arg-dichotomous-as-continuous"></a></dt>
 <dd><p>logical. treat binary 0/1 columns as continuous</p></dd>
+
+
+<dt id="arg-report-median">report_median<a class="anchor" aria-label="anchor" href="#arg-report-median"></a></dt>
+<dd><p>logical. whether to include the median alongside the mean for continuous variables</p></dd>
+
+
+<dt id="arg-label-characteristic">label_characteristic<a class="anchor" aria-label="anchor" href="#arg-label-characteristic"></a></dt>
+<dd><p>character. custom header text for the characteristic column</p></dd>
 
 </dl></div>
     <div id="value">
