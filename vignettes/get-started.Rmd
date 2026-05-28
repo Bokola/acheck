@@ -181,6 +181,9 @@ After inflating the template
 
 ## get vulnerability criteria variables
 
+## automate indicators
+
+
 
 <!--
 There can be other functions, examples and tests in your flat template.
