@@ -24,3 +24,6 @@ criterion alongside its designated operational indicator visually
 merging repeating criteria rows and introducing complete outer frame grids
 that fully enclose column headers with explicit bold top and bottom lines
 }
+\examples{
+\dontrun{gen_verification_criteria_table()}
+}

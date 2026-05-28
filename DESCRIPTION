@@ -24,6 +24,7 @@ Imports:
     officer,
     openxlsx,
     parallel,
+    patchwork,
     purrr,
     readxl,
     rlang,

@@ -18,6 +18,8 @@
 #' @importFrom stringi stri_detect_fixed
 #'
 #' @export
+#' @examples
+#' \dontrun{match_county_records()}
 match_county_records <- function(registration, payroll, county_name = "Tana") {
   # filter registration pool for the target county and drop duplicate id records
   df_county_ref <- registration %>%

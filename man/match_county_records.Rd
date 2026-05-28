@@ -22,3 +22,6 @@ Subsets registration data for a specific county, removes duplicate IDs,
 joins the results with payroll records, and flags rows where the payroll name
 is a partial match inside the registration name string.
 }
+\examples{
+\dontrun{match_county_records()}
+}

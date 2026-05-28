@@ -16,3 +16,6 @@ A cleaned character vector.
 Cleans a character vector of names by collapsing extra whitespace,
 trimming leading/trailing spaces, and converting to title case.
 }
+\examples{
+\dontrun{normalize_names()}
+}

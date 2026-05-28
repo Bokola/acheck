@@ -42,6 +42,8 @@ flat_full.Rmd:
   - R/gen_verification_criteria_table.R
   - R/get_vulnerability_data.R
   - R/automate_indicators.R
+  - R/plot_parts_donut.R
+  - R/plot_faceted_donuts.R
   tests: tests/testthat/test-add_gt_to_word.R
   vignettes: vignettes/get-started.Rmd
   inflate:

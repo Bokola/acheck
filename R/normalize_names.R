@@ -13,6 +13,8 @@
 #' @importFrom stringr str_squish str_to_title
 #'
 #' @export
+#' @examples
+#' \dontrun{normalize_names()}
 normalize_names <- function(x) {
   x <- stringr::str_squish(x)       # trims + collapses internal spaces
   x <- stringr::str_to_title(x)     # title case

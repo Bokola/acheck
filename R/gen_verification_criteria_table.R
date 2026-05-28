@@ -19,6 +19,8 @@
 #' @importFrom officer fp_border fp_text
 #'
 #' @export
+#' @examples
+#' \dontrun{gen_verification_criteria_table()}
 gen_verification_criteria_table <- function(
     df = verification_criteria,
     title = "Vulnerability Criteria"
