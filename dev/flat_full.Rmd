@@ -310,7 +310,16 @@ create_summary_table <- function(data,
           all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
-          all_continuous() ~ function(x) paste0(gtsummary::style_number(x * 100, digits = 0), "%"),
+          # lower case comments without dots or dashes
+          # dynamically switch style format if handling raw numbers vs percentage indexes
+          all_continuous() ~ function(x) {
+            val <- na.omit(x)
+            if (length(val) > 0 && max(val) > 1) {
+              return(gtsummary::style_number(x, digits = 0))
+            } else {
+              return(paste0(gtsummary::style_number(x * 100, digits = 0), "%"))
+            }
+          },
           all_categorical() ~ c(0, 1)
         ),
         missing = "no"
@@ -319,8 +328,6 @@ create_summary_table <- function(data,
       gtsummary::bold_labels() %>%
       gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**")) %>%
       gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
-      # lower case comments without dots or dashes
-      # strip away hardcoded column width rules to let the document layout engine autofit contents
       gtsummary::modify_table_body(function(x) {
         attr(x, "table_styling")$columns_width <- NULL
         return(x)
@@ -338,10 +345,8 @@ create_summary_table <- function(data,
     build_summary(data)
   }
   
-  # return the clean gtsummary object without stripping its class metadata
   return(raw_gtsummary)
 }
-
 ```
 
 ## create a listing table using `gtreg{}`
