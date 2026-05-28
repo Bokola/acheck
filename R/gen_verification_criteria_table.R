@@ -41,9 +41,9 @@ gen_verification_criteria_table <- function(
   # initialize gt table visualization structure
   styled_table <- display_df %>%
     gt::gt() %>%
-    gt::tab_header(
-      title = title
-    ) %>%
+  { if (!is.null(title) && nzchar(as.character(title))) 
+      gt::tab_header(., title = title) 
+    else . } %>%
     gt::cols_label(
       Criteria = "Criteria",
       Indicator = "Indicator"

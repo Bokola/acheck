@@ -60,7 +60,18 @@ create_summary_table <- function(data,
       gtsummary::add_n() %>%
       gtsummary::bold_labels() %>%
       # re write the characteristic column header to the custom label string
-      gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**"))
+      gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**")) %>%
+    
+    # start added
+    
+    # remove the automated gtsummary continuous footnote
+      gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
+      # convert to native flextable for rock-solid Word document processing
+      gtsummary::as_flex_table() %>%
+      # remove the remaining footnote row block from the layout footer
+      flextable::delete_part(part = "footer")
+      
+      # end added
   }
   
   # logic to handle stratification
