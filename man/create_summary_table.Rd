@@ -11,7 +11,9 @@ create_summary_table(
   group_by = NULL,
   strata = NULL,
   percent_type = "column",
-  dichotomous_as_continuous = FALSE
+  dichotomous_as_continuous = FALSE,
+  report_median = FALSE,
+  label_characteristic = "Characteristic"
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ create_summary_table(
 \item{percent_type}{character. percents by row or column}
 
 \item{dichotomous_as_continuous}{logical. treat binary 0/1 columns as continuous}
+
+\item{report_median}{logical. whether to include the median alongside the mean for continuous variables}
+
+\item{label_characteristic}{character. custom header text for the characteristic column}
 }
 \value{
 a list of gtsummary object

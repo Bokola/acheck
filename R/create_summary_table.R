@@ -9,6 +9,8 @@
 #' @param strata character. stratifying variable
 #' @param percent_type character. percents by row or column
 #' @param dichotomous_as_continuous logical. treat binary 0/1 columns as continuous
+#' @param report_median logical. whether to include the median alongside the mean for continuous variables
+#' @param label_characteristic character. custom header text for the characteristic column
 #'
 #' @returns a list of gtsummary object 
 #' @export
@@ -21,16 +23,21 @@ create_summary_table <- function(data,
                                  group_by = NULL,
                                  strata = NULL,
                                  percent_type = "column",
-                                 dichotomous_as_continuous = FALSE) {
+                                 dichotomous_as_continuous = FALSE,
+                                 report_median = FALSE,
+                                 label_characteristic = "Characteristic") {
   
   # internal helper to build the base table
   build_summary <- function(df) {
-    # 1 build the type list dynamically based on the parameter
+    # build the type list dynamically based on the parameter
     summary_types <- list(all_categorical() ~ "categorical")
     if (dichotomous_as_continuous) {
       summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
     }
-
+    
+    # dynamically adjust the statistic block based on report_median flag
+    continuous_stat <- if (report_median) "{mean} ({median})" else "{mean}"
+    
     df %>%
       # any_of(group_by) handles the case where group_by might be null
       dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
@@ -40,17 +47,20 @@ create_summary_table <- function(data,
         percent = percent_type,
         type = summary_types,
         statistic = list(
-          all_continuous() ~ "{mean} ({median})",
+          all_continuous() ~ continuous_stat,
           all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
-          all_continuous() ~ purrr::partial(style_number, big.mark = ","),
+          # convert continuous proportions to whole numbers and append percentage sign
+          all_continuous() ~ function(x) paste0(gtsummary::style_number(x * 100, digits = 0), "%"),
           all_categorical() ~ c(0, 1)
         ),
         missing = "no"
       ) %>%
       gtsummary::add_n() %>%
-      gtsummary::bold_labels()
+      gtsummary::bold_labels() %>%
+      # re write the characteristic column header to the custom label string
+      gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**"))
   }
   
   # logic to handle stratification
@@ -65,3 +75,4 @@ create_summary_table <- function(data,
     build_summary(data)
   }
 }
+
