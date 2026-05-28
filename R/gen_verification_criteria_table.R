@@ -10,12 +10,13 @@
 #'
 #' @param df dataframe of verification criteria
 #' @param title character vector of title
-#' @return A styled gt table object containing the merged two column layout with 
+#' @return A styled flextable object containing the merged two column layout with 
 #' fully enclosed bold grid line formatting
 #'
 #' @importFrom tibble tibble
 #' @importFrom dplyr mutate lag
-#' @importFrom gt gt cols_label tab_header tab_source_note pct tab_options px cells_body tab_style cell_borders cells_column_labels cell_fill
+#' @importFrom flextable flextable as_paragraph as_chunk compose align width border_outer border_inner_h border_inner_v bg color bold font set_caption
+#' @importFrom officer fp_border fp_text
 #'
 #' @export
 gen_verification_criteria_table <- function(
@@ -23,152 +24,59 @@ gen_verification_criteria_table <- function(
     title = "Vulnerability Criteria"
     ) {
   
-  # instantiate the explicit two column data frame mapping
-
-  
   # track total row count
   total_rows <- nrow(df)
   
   # track the indices where a new criteria block begins for main horizontal lines
   main_grid_rows <- c(7, 12, 15, 16)
   
-  # process data internally to blank out sequential duplicate row labels for visual merge
-  display_df <- df %>%
-    dplyr::mutate(
-      Criteria = ifelse(Criteria == dplyr::lag(Criteria, default = ""), "", Criteria)
-    )
+  # define the explicit border properties using officer
+  heavy_border <- officer::fp_border(color = "#0B1054", width = 2.5, style = "solid")
+  mid_border   <- officer::fp_border(color = "#0B1054", width = 2, style = "solid")
+  thin_border  <- officer::fp_border(color = "#d3d3d3", width = 1, style = "solid")
   
-  # initialize gt table visualization structure
-  styled_table <- display_df %>%
-    gt::gt() %>%
-  { if (!is.null(title) && nzchar(as.character(title))) 
-      gt::tab_header(., title = title) 
-    else . } %>%
-    gt::cols_label(
-      Criteria = "Criteria",
-      Indicator = "Indicator"
-    ) %>%
-    gt::tab_source_note(
-      source_note = "Acronym Definitions: OTP - Outpatient Therapeutic Program; SFP - Supplementary Feeding Program; FCS - Food Consumption Score; HHs - Households"
-    ) %>%
+  # build the flextable layout structure
+  styled_table <- flextable::flextable(df) %>%
+    # visually merge repeating cell items sequentially along the vertical axis
+    flextable::merge_v(j = ~ Criteria) %>%
+    # map alignments and set relative layout sizing to fit standard pages
+    flextable::align(align = "left", part = "all") %>%
+    flextable::valign(valign = "top", part = "body") %>%
+    flextable::width(j = "Criteria", width = 2.2) %>%
+    flextable::width(j = "Indicator", width = 4.3) %>%
+    
+    # apply deep blue background fill with white bold text for column labels
+    flextable::bg(bg = "#0B1054", part = "header") %>%
+    flextable::color(color = "white", part = "header") %>%
+    flextable::bold(part = "header") %>%
     
     # apply a standard baseline horizontal grid line separating every single indicator row
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "top",
-        color = "#d3d3d3",
-        weight = gt::px(1),
-        style = "solid"
-      ),
-      locations = gt::cells_body(rows = 1:total_rows)
-    ) %>%
-    
-    # apply acted deep blue background fill with white text for column labels
-    gt::tab_style(
-      style = list(
-        gt::cell_fill(color = "#0B1054"),
-        gt::cell_text(color = "white", weight = "bold")
-      ),
-      locations = gt::cells_column_labels(columns = c("Criteria", "Indicator"))
-    ) %>%
+    flextable::border_inner_h(border = thin_border, part = "body") %>%
     
     # overlay bold main horizontal block dividers within the body row structures
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "top",
-        color = "#0B1054",
-        weight = gt::px(2.25),
-        style = "solid"
-      ),
-      locations = gt::cells_body(rows = main_grid_rows)
-    ) %>%
+    flextable::hline(i = (main_grid_rows - 1), border = mid_border, part = "body") %>%
     
-    # force line above the column header to be bold in the interactive viewer
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "top",
-        color = "#0B1054",
-        weight = gt::px(2.5),
-        style = "solid"
-      ),
-      locations = gt::cells_column_labels(columns = c("Criteria", "Indicator"))
-    ) %>%
+    # construct complete outer frame borders and center divider line enclosing headers and rows
+    flextable::border_outer(border = heavy_border, part = "all") %>%
+    flextable::border_inner_v(border = mid_border, part = "all") %>%
     
-    # force line below the column header to be bold in the interactive viewer
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "bottom",
-        color = "#0B1054",
-        weight = gt::px(2.5),
-        style = "solid"
-      ),
-      locations = gt::cells_column_labels(columns = c("Criteria", "Indicator"))
+    # add font settings and map the source footnote notes cleanly to the bottom layout
+    flextable::font(fontname = "Arial", part = "all") %>%
+    flextable::add_footer_lines(
+      values = "Acronym Definitions: OTP - Outpatient Therapeutic Program; SFP - Supplementary Feeding Program; FCS - Food Consumption Score; HHs - Households"
     ) %>%
-    
-    # construct an explicit thick bottom line at the absolute base of the table body rows
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "bottom",
-        color = "#0B1054",
-        weight = gt::px(2.5),
-        style = "solid"
-      ),
-      locations = gt::cells_body(rows = total_rows)
-    ) %>%
-    
-    # establish a heavy vertical dividing line between the criteria and indicator columns
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "right",
-        color = "#0B1054",
-        weight = gt::px(2),
-        style = "solid"
-      ),
-      locations = list(
-        gt::cells_body(columns = "Criteria"),
-        gt::cells_column_labels(columns = "Criteria")
+    flextable::font(fontname = "Arial", part = "footer")
+  
+  # append table title using native word paragraph formatting if present
+  if (!is.null(title) && nzchar(as.character(title))) {
+    styled_table <- styled_table %>%
+      flextable::set_caption(
+        caption = flextable::as_paragraph(
+          flextable::as_chunk(title, props = officer::fp_text(bold = TRUE, font.size = 12))
+        ),
+        style = "Table Caption"
       )
-    ) %>%
-    
-    # construct complete left outer frame border enclosing headers and cell body rows
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "left",
-        color = "#0B1054",
-        weight = gt::px(2.5),
-        style = "solid"
-      ),
-      locations = list(
-        gt::cells_body(columns = "Criteria"),
-        gt::cells_column_labels(columns = "Criteria")
-      )
-    ) %>%
-    
-    # construct complete right outer frame border enclosing headers and cell body rows
-    gt::tab_style(
-      style = gt::cell_borders(
-        sides = "right",
-        color = "#0B1054",
-        weight = gt::px(2.5),
-        style = "solid"
-      ),
-      locations = list(
-        gt::cells_body(columns = "Indicator"),
-        gt::cells_column_labels(columns = "Indicator")
-      )
-    ) %>%
-    
-    # control options directly to stop default rendering layers from resetting manual borders
-    gt::tab_options(
-      table.font.size = gt::pct(95),
-      heading.align = "left",
-      table.width = gt::pct(100),
-      table.border.top.style = "none",
-      table.border.bottom.style = "none",
-      heading.border.bottom.style = "none",
-      column_labels.border.top.style = "none",
-      column_labels.border.bottom.style = "none"
-    )
+  }
   
   return(styled_table)
 }

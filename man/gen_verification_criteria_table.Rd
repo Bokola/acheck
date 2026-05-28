@@ -15,7 +15,7 @@ gen_verification_criteria_table(
 \item{title}{character vector of title}
 }
 \value{
-A styled gt table object containing the merged two column layout with
+A styled flextable object containing the merged two column layout with
 fully enclosed bold grid line formatting
 }
 \description{
