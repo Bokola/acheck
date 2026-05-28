@@ -12,10 +12,10 @@ automate_indicators(df, cols)
 \item{cols}{A character vector specifying the target column names to process.}
 }
 \value{
-A modified dataframe with updated raw counts and new indicator columns.
+A modified dataframe with updated raw counts and appended indicator columns.
 }
 \description{
 This function dynamically scans input columns, handles missing data structures,
 cleans raw count variables, and generates binary 0/1 indicators based on
-underlying numeric and character type properties.
+underlying numeric and character type properties, preserving the original name.
 }

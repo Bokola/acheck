@@ -2777,30 +2777,40 @@ get_vulnerability_data <- function(){
 #'
 #' This function dynamically scans input columns, handles missing data structures,
 #' cleans raw count variables, and generates binary 0/1 indicators based on 
-#' underlying numeric and character type properties.
+#' underlying numeric and character type properties, preserving the original name.
 #'
 #' @param df A dataframe or tibble object.
 #' @param cols A character vector specifying the target column names to process.
 #'
-#' @return A modified dataframe with updated raw counts and new indicator columns.
-#' @importFrom dplyr mutate across all_of cur_column if_else
-#' @importFrom stringr str_detect str_replace
+#' @return A modified dataframe with updated raw counts and appended indicator columns.
+#' @importFrom dplyr mutate across all_of if_else
+#' @importFrom stringr str_detect
 #' @export
 automate_indicators <- function(df, cols) {
   df %>%
+    # first pass clean all raw numeric count inputs to handle nas and zeros universally
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(cols),
+        function(x) {
+          # lower case comments without dots or dashes
+          if (is.numeric(x)) {
+            return(dplyr::if_else(is.na(x) | x == 0, 0, x))
+          }
+          return(x)
+        }
+      )
+    ) %>%
+    # second pass generate indicators and append ind cleanly to the original column names
     dplyr::mutate(
       dplyr::across(
         dplyr::all_of(cols), 
         function(x) {
-          # lower case comments without dots or dashes
-          # process numeric columns containing count distributions
           if (is.numeric(x)) {
-            clean_counts <- dplyr::if_else(is.na(x) | x == 0, 0, x)
-            indicator <- dplyr::if_else(clean_counts == 0, 0, 1)
+            indicator <- dplyr::if_else(x == 0, 0, 1)
             return(indicator)
           } 
           
-          # process character strings containing yes or no responses
           indicator <- dplyr::if_else(
             stringr::str_detect(tolower(x), "no") | is.na(x), 
             0, 
@@ -2808,13 +2818,8 @@ automate_indicators <- function(df, cols) {
           )
           return(indicator)
         }, 
-        .names = "{ifelse(stringr::str_detect(.col, '^number_'), stringr::str_replace(.col, '^number_', ''), .col)}_ind"
+        .names = "{.col}_ind"
       )
-    ) %>%
-    # clean and update the raw numeric baseline count vectors
-    dplyr::mutate(
-      number_preg = dplyr::if_else(is.na(number_preg) | number_preg == 0, 0, number_preg),
-      number_lact = dplyr::if_else(is.na(number_lact) | number_lact == 0, 0, number_lact)
     )
 }
 ```
