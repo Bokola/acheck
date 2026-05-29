@@ -18,34 +18,34 @@ get_distinct <- function(
     phone_var = "ben_number",
     name_var = "benef_name"
 ){
-  # 1 capture exact duplicates and instances of shared name with different phones
+  # capture exact duplicates and instances of shared name with different phones
   anomalies <- x %>%
     mutate(temp_id = row_number()) %>%
     {
       bind_rows(
-        # scenario 2: shared name, different phones
+        # scenario 2 shared name different phones
         group_by(., across(any_of(name_var))) %>% 
           filter(n() > 1 & n_distinct(across(any_of(phone_var))) > 1),
         
-        # scenario 3: exact duplicates
+        # scenario 3 exact duplicates
         group_by(., across(any_of(vars_to_check))) %>% 
           filter(n() > 1)
       )
     } %>%
     distinct(temp_id, .keep_all = TRUE)
   
-  # 2 isolate clean rows that don't participate in those loops
+  # isolate clean rows that dont participate in those loops
   clean_data <- x %>%
     mutate(temp_id = row_number()) %>%
     filter(!(temp_id %in% anomalies$temp_id))
   
-  # 3 resolve the anomalies by keeping just the first instance per name
+  # resolve the anomalies by keeping just the first instance per unique variable combo
   resolved_anomalies <- anomalies %>%
-    group_by(across(any_of(name_var))) %>%
+    group_by(across(any_of(vars_to_check))) %>%
     slice(1) %>%
     ungroup()
   
-  # 4 bind clean entries and resolved entries back together
+  # bind clean entries and resolved entries back together
   bind_rows(clean_data, resolved_anomalies) %>%
     arrange(temp_id) %>%
     select(-temp_id)
