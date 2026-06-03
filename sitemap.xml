@@ -46,13 +46,17 @@
 <url><loc>/reference/pipe.html</loc></url>
 <url><loc>/reference/plot_bar.html</loc></url>
 <url><loc>/reference/plot_faceted_donuts.html</loc></url>
+<url><loc>/reference/plot_household.html</loc></url>
+<url><loc>/reference/plot_household_leaflet.html</loc></url>
 <url><loc>/reference/plot_parts_donut.html</loc></url>
 <url><loc>/reference/preprocess_reg.html</loc></url>
 <url><loc>/reference/pull_kobo_data.html</loc></url>
 <url><loc>/reference/read_workbook.html</loc></url>
+<url><loc>/reference/save_plots_to_png.html</loc></url>
 <url><loc>/reference/slice_reg.html</loc></url>
 <url><loc>/reference/standardize_names.html</loc></url>
 <url><loc>/reference/survey.html</loc></url>
+<url><loc>/reference/theme_plots.html</loc></url>
 <url><loc>/reference/verification_criteria.html</loc></url>
 <url><loc>/reference/write_list_to_excel.html</loc></url>
 </urlset>
