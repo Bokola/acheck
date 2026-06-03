@@ -3,14 +3,14 @@
 #' visualize parts to whole using an automated faceted donut grid via patchwork
 #'
 #' @param data dataframe
-#' @param fill_col character. the categorical variable to slice (e.g. "FCSGName")
-#' @param facet_col character. the variable to split panels by (e.g. "county")
-#' @param palette character vector. hex color values mapping to categories
+#' @param fill_col character the categorical variable to slice 
+#' @param facet_col character the variable to split panels by 
+#' @param palette character vector hex color values mapping to categories
 #'
 #' @returns a patchwork grid assembly of donut plots
 #' @importFrom dplyr filter count mutate pull
 #' @importFrom ggplot2 ggplot aes geom_col geom_text scale_fill_manual theme_void theme coord_polar xlim labs element_text position_stack
-#' @importFrom patchwork wrap_plots
+#' @importFrom patchwork wrap_plots plot_layout
 #' @importFrom stringr str_to_title
 #' @export
 #' @examples
@@ -20,7 +20,6 @@ plot_faceted_donuts <- function(data,
                                 facet_col, 
                                 palette = c("#388E3C", "#F57C00", "#D32F2F")) {
   
-  # lower case comments without dots or dashes
   # extract unique facet groups while ignoring missing rows
   facet_groups <- data %>%
     dplyr::filter(!is.na(.data[[facet_col]])) %>%
@@ -53,15 +52,12 @@ plot_faceted_donuts <- function(data,
       dplyr::mutate(
         pct = n / sum(n),
         pct_label = paste0(
-          .data[[fill_col]], 
-          "\n(", 
-          scales::percent(pct, accuracy = 1), 
-          ")"
+          scales::percent(pct, accuracy = 1)
         )
       )
     
     ggplot2::ggplot(plot_df, ggplot2::aes(x = 3, y = pct, fill = .data[[fill_col]])) +
-      # maintain donut thickness between radius limits 2 and 3.5
+      # maintain donut thickness between inner and outer radius limits
       ggplot2::geom_col(width = 1, color = "white", size = 0.5) +
       # push text radius position out beyond the chart area boundary
       ggplot2::geom_text(
@@ -78,7 +74,7 @@ plot_faceted_donuts <- function(data,
       ggplot2::labs(title = stringr::str_to_title(group)) +
       ggplot2::theme_void() +
       ggplot2::theme(
-        legend.position = "none",
+        # removed legend position here to let patchwork handle it
         plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = 11, vjust = -1)
       )
   })
@@ -87,8 +83,10 @@ plot_faceted_donuts <- function(data,
   # using base r filter option to keep namespaces minimal
   plot_list <- plot_list[!sapply(plot_list, is.null)]
   
-  # stitch panels together cleanly using automated column configurations
-  combined_grid <- patchwork::wrap_plots(plot_list, ncol = calculated_ncol)
+  # stitch panels together and collect legends into a single unified guide
+  combined_grid <- patchwork::wrap_plots(plot_list, ncol = calculated_ncol) +
+    patchwork::plot_layout(guides = "collect") &
+    ggplot2::theme(legend.position = "bottom")
   
   return(combined_grid)
 }

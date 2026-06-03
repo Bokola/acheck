@@ -44,6 +44,10 @@ flat_full.Rmd:
   - R/automate_indicators.R
   - R/plot_parts_donut.R
   - R/plot_faceted_donuts.R
+  - R/theme_plots.R
+  - R/save_plots_to_png.R
+  - R/plot_household.R
+  - R/plot_household_leaflet.R
   tests: tests/testthat/test-add_gt_to_word.R
   vignettes: vignettes/get-started.Rmd
   inflate:

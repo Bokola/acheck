@@ -10,15 +10,20 @@ License: MIT + file LICENSE
 Depends: 
     R (>= 3.5)
 Imports: 
+    cowplot,
     dm,
     dplyr,
     flextable,
     ggplot2,
+    grDevices,
+    grid,
     gtreg,
     gtsummary,
     here,
+    htmltools,
     janitor,
     labelled,
+    leaflet,
     lubridate,
     magrittr,
     officer,

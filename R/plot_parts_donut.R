@@ -22,10 +22,10 @@ plot_parts_donut <- function(data, fill_col, palette = c("#81C784", "#FFB74D", "
     dplyr::mutate(
       pct = n / sum(n),
       pct_label = paste0(
-        .data[[fill_col]], 
-        "\n(", 
-        scales::percent(pct, accuracy = 1), 
-        ")"
+        # .data[[fill_col]], 
+        # "\n(", 
+        scales::percent(pct, accuracy = 1)
+        # ,")"
       )
     )
   
@@ -46,6 +46,6 @@ plot_parts_donut <- function(data, fill_col, palette = c("#81C784", "#FFB74D", "
     ggplot2::xlim(c(1, 5.2)) +
     ggplot2::theme_void() +
     ggplot2::theme(
-      legend.position = "none"
+      legend.position = "bottom"
     )
 }

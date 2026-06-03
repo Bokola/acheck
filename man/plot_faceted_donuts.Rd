@@ -14,11 +14,11 @@ plot_faceted_donuts(
 \arguments{
 \item{data}{dataframe}
 
-\item{fill_col}{character. the categorical variable to slice (e.g. "FCSGName")}
+\item{fill_col}{character the categorical variable to slice}
 
-\item{facet_col}{character. the variable to split panels by (e.g. "county")}
+\item{facet_col}{character the variable to split panels by}
 
-\item{palette}{character vector. hex color values mapping to categories}
+\item{palette}{character vector hex color values mapping to categories}
 }
 \value{
 a patchwork grid assembly of donut plots
