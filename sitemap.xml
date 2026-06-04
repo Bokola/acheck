@@ -12,6 +12,7 @@
 <url><loc>/reference/add_gt_to_word.html</loc></url>
 <url><loc>/reference/apply_corrections.html</loc></url>
 <url><loc>/reference/automate_indicators.html</loc></url>
+<url><loc>/reference/check_disability.html</loc></url>
 <url><loc>/reference/check_esr_registrations.html</loc></url>
 <url><loc>/reference/choices.html</loc></url>
 <url><loc>/reference/clean_camp.html</loc></url>
@@ -31,6 +32,7 @@
 <url><loc>/reference/export_to_excel_appended.html</loc></url>
 <url><loc>/reference/export_to_excel_formatted.html</loc></url>
 <url><loc>/reference/find_name_matches.html</loc></url>
+<url><loc>/reference/flatten_dm_by_names.html</loc></url>
 <url><loc>/reference/gen_verification_criteria_table.html</loc></url>
 <url><loc>/reference/get_distinct.html</loc></url>
 <url><loc>/reference/get_duplicates.html</loc></url>
@@ -45,6 +47,7 @@
 <url><loc>/reference/normalize_names.html</loc></url>
 <url><loc>/reference/pipe.html</loc></url>
 <url><loc>/reference/plot_bar.html</loc></url>
+<url><loc>/reference/plot_bar_top_n.html</loc></url>
 <url><loc>/reference/plot_faceted_donuts.html</loc></url>
 <url><loc>/reference/plot_household.html</loc></url>
 <url><loc>/reference/plot_household_leaflet.html</loc></url>
