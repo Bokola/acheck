@@ -8,9 +8,10 @@
 #' @param group_by character. grouping variable
 #' @param strata character. stratifying variable
 #' @param percent_type character. percents by row or column
-#' @param dichotomous_as_continuous logical. treat binary 0/1 columns as continuous
+#' @param dichotomous_as_continuous logical. treat binary 0/1  and likert scale columns as continuous
 #' @param report_median logical. whether to include the median alongside the mean for continuous variables
 #' @param label_characteristic character. custom header text for the characteristic column
+#' @param round_continuous logical. whether to round continuous summaries to whole numbers instead of decimals
 #'
 #' @returns a gtsummary object that renders across all formats natively
 #' @export
@@ -22,16 +23,34 @@ create_summary_table <- function(data,
                                  percent_type = "column",
                                  dichotomous_as_continuous = FALSE,
                                  report_median = FALSE,
-                                 label_characteristic = "Characteristic") {
+                                 label_characteristic = "Characteristic",
+                                 round_continuous = FALSE) {
   
   # internal helper to build the base table structure
   build_summary <- function(df) {
-    summary_types <- list(all_categorical() ~ "categorical")
+    
+    # establish structural types for the columns
+    summary_types <- list(gtsummary::all_categorical() ~ "categorical")
+    
     if (dichotomous_as_continuous) {
+      # find columns selected by the user that are numeric but classified as categorical or dichotomous
+      selected_df <- df %>% dplyr::select({{cols}})
+      numeric_likert_cols <- names(selected_df)[sapply(selected_df, is.numeric)]
+      
+      if (length(numeric_likert_cols) > 0) {
+        # explicitly convert these names into a formula assigning them to continuous format
+        likert_type_list <- stats::setNames(rep(list("continuous"), length(numeric_likert_cols)), numeric_likert_cols)
+        summary_types <- c(summary_types, likert_type_list)
+      }
+      
+      # add standard dichotomous continuous conversion selector rule
       summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
     }
     
     continuous_stat <- if (report_median) "{mean} ({median})" else "{mean}"
+    
+    # set continuous digit precision based on rounding argument choice
+    continuous_digits <- if (round_continuous) 0 else 1
     
     df %>%
       dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
@@ -41,21 +60,21 @@ create_summary_table <- function(data,
         percent = percent_type,
         type = summary_types,
         statistic = list(
-          all_continuous() ~ continuous_stat,
-          all_categorical() ~ "{n} ({p}%)"
+          gtsummary::all_continuous() ~ continuous_stat,
+          gtsummary::all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
           # lower case comments without dots or dashes
           # dynamically switch style format if handling raw numbers vs percentage indexes
-          all_continuous() ~ function(x) {
+          gtsummary::all_continuous() ~ function(x) {
             val <- na.omit(x)
             if (length(val) > 0 && max(val) > 1) {
-              return(gtsummary::style_number(x, digits = 0))
+              return(gtsummary::style_number(x, digits = continuous_digits))
             } else {
-              return(paste0(gtsummary::style_number(x * 100, digits = 0), "%"))
+              return(paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
             }
           },
-          all_categorical() ~ c(0, 1)
+          gtsummary::all_categorical() ~ c(0, 1)
         ),
         missing = "no"
       ) %>%
@@ -73,7 +92,7 @@ create_summary_table <- function(data,
   raw_gtsummary <- if (!is.null(strata)) {
     data %>%
       gtsummary::tbl_strata(
-        strata = all_of(strata),
+        strata = dplyr::all_of(strata),
         .tbl_fun = ~ build_summary(.x)
       )
   } else {

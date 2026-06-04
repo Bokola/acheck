@@ -273,9 +273,10 @@ export_list_to_word <- function(table_list, doc_path) {
 #' @param group_by character. grouping variable
 #' @param strata character. stratifying variable
 #' @param percent_type character. percents by row or column
-#' @param dichotomous_as_continuous logical. treat binary 0/1 columns as continuous
+#' @param dichotomous_as_continuous logical. treat binary 0/1  and likert scale columns as continuous
 #' @param report_median logical. whether to include the median alongside the mean for continuous variables
 #' @param label_characteristic character. custom header text for the characteristic column
+#' @param round_continuous logical. whether to round continuous summaries to whole numbers instead of decimals
 #'
 #' @returns a gtsummary object that renders across all formats natively
 #' @export
@@ -287,16 +288,34 @@ create_summary_table <- function(data,
                                  percent_type = "column",
                                  dichotomous_as_continuous = FALSE,
                                  report_median = FALSE,
-                                 label_characteristic = "Characteristic") {
+                                 label_characteristic = "Characteristic",
+                                 round_continuous = FALSE) {
   
   # internal helper to build the base table structure
   build_summary <- function(df) {
-    summary_types <- list(all_categorical() ~ "categorical")
+    
+    # establish structural types for the columns
+    summary_types <- list(gtsummary::all_categorical() ~ "categorical")
+    
     if (dichotomous_as_continuous) {
+      # find columns selected by the user that are numeric but classified as categorical or dichotomous
+      selected_df <- df %>% dplyr::select({{cols}})
+      numeric_likert_cols <- names(selected_df)[sapply(selected_df, is.numeric)]
+      
+      if (length(numeric_likert_cols) > 0) {
+        # explicitly convert these names into a formula assigning them to continuous format
+        likert_type_list <- stats::setNames(rep(list("continuous"), length(numeric_likert_cols)), numeric_likert_cols)
+        summary_types <- c(summary_types, likert_type_list)
+      }
+      
+      # add standard dichotomous continuous conversion selector rule
       summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
     }
     
     continuous_stat <- if (report_median) "{mean} ({median})" else "{mean}"
+    
+    # set continuous digit precision based on rounding argument choice
+    continuous_digits <- if (round_continuous) 0 else 1
     
     df %>%
       dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
@@ -306,21 +325,21 @@ create_summary_table <- function(data,
         percent = percent_type,
         type = summary_types,
         statistic = list(
-          all_continuous() ~ continuous_stat,
-          all_categorical() ~ "{n} ({p}%)"
+          gtsummary::all_continuous() ~ continuous_stat,
+          gtsummary::all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
           # lower case comments without dots or dashes
           # dynamically switch style format if handling raw numbers vs percentage indexes
-          all_continuous() ~ function(x) {
+          gtsummary::all_continuous() ~ function(x) {
             val <- na.omit(x)
             if (length(val) > 0 && max(val) > 1) {
-              return(gtsummary::style_number(x, digits = 0))
+              return(gtsummary::style_number(x, digits = continuous_digits))
             } else {
-              return(paste0(gtsummary::style_number(x * 100, digits = 0), "%"))
+              return(paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
             }
           },
-          all_categorical() ~ c(0, 1)
+          gtsummary::all_categorical() ~ c(0, 1)
         ),
         missing = "no"
       ) %>%
@@ -338,7 +357,7 @@ create_summary_table <- function(data,
   raw_gtsummary <- if (!is.null(strata)) {
     data %>%
       gtsummary::tbl_strata(
-        strata = all_of(strata),
+        strata = dplyr::all_of(strata),
         .tbl_fun = ~ build_summary(.x)
       )
   } else {
@@ -954,84 +973,370 @@ get_distinct <- function(
 ## plot bar
 
 ```{r function-plot_bar}
-#' plot bar graphs
+#' plot bar graphs with automatic summary calculations
 #'
 #' @param data dataframe
 #' @param x_var character vector x-axis variable
-#' @param y_var character vector y-axis variable
+#' @param y_var character vector variable to calculate mean or proportion on
+#' @param type character type of calculation: "count", "proportion", or "mean"
 #' @param fill_col character vector of hex color code for fill
 #' @param title character vector of title
 #' @param subtitle character vector of subtitle
 #' @param x_lab character vector of label for x-axis
 #' @param y_lab character vector of label for y-axis
-#' @importFrom rlang ensym
+#' @importFrom rlang ensym as_label
+#' @importFrom dplyr filter group_by summarize mutate ungroup
+#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous expansion theme_minimal theme element_blank element_text
+#' @importFrom scales percent comma
 #'
-#' @returns list of plot object
+#' @returns a ggplot object
 #' @export
 #'
 #' @examples
-#' \dontrun{plot_bar()}
+#' \dontrun{plot_bar(data, x_var = "job_type", type = "count")}
 plot_bar <- function(data, 
                      x_var, 
                      y_var = NULL, 
+                     type = c("count", "proportion", "mean"),
                      fill_col = "#0066A1",
                      title = "variable distribution", 
                      subtitle = NULL, 
                      x_lab = NULL, 
-                     y_lab = "count") {
+                     y_lab = NULL) {
   
+  type <- match.arg(type)
   x_sym <- rlang::ensym(x_var)
+  x_char <- rlang::as_label(x_sym)
   
-  if (!is.null(y_var)) {
-    y_sym <- ensym(y_var)
-    
-    # case 1: plotting pre-calculated values with percent
-    # we calculate total sum to derive percentages for the labels
-    total_sum <- sum(data[[as_label(y_sym)]], na.rm = TRUE)
-    
-    # p <- ggplot(data, aes(x = fct_reorder(as.factor(!!x_sym), !!y_sym), y = !!y_sym)) +
-    p <- ggplot2::ggplot(data, aes(x = !!x_sym, y = !!y_sym)) +
-      ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-      ggplot2::geom_text(
-        ggplot2::aes(label = paste0(!!y_sym, " (", scales::percent(!!y_sym / total_sum, accuracy = 0.1), ")")),
-        vjust = -0.5, size = 3, fontface = "bold"
-      )
-    
-  } else {
-    # case 2: plotting frequencies with dynamic percent
-    # p <- ggplot(data, aes(x = fct_infreq(as.factor(!!x_sym)))) +
-    p <- ggplot2::ggplot(data, aes(x = !!x_sym)) +
-      ggplot2::geom_bar(fill = fill_col, alpha = 0.9, width = 0.75) +
-      ggplot2::geom_text(
-        stat = "count",
-        ggplot2::aes(label = after_stat(paste0(count, " (", scales::percent(count / sum(count), accuracy = 0.1), ")"))),
-        vjust = -0.5, size = 3, fontface = "bold"
-      )
+  # drop missing values from the grouping variable
+  data <- data %>% dplyr::filter(!is.na(!!x_sym))
+  
+  # standardizing labels based on the calculation metric
+  if (is.null(y_lab)) {
+    y_lab <- switch(type,
+                    "count" = "count",
+                    "proportion" = "proportion",
+                    "mean" = "mean")
   }
   
+  # internal data processing engine
+  if (!is.null(y_var)) {
+    y_sym <- rlang::ensym(y_var)
+    
+    if (type == "mean") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(metric = round(mean(!!y_sym, na.rm = TRUE)), .groups = "drop")
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+      
+    } else if (type == "proportion") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(
+          metric = if (is.numeric(!!y_sym) || is.logical(!!y_sym)) {
+            mean(!!y_sym == 1, na.rm = TRUE)
+          } else {
+            mean(!is.na(!!y_sym), na.rm = TRUE)
+          }, 
+          .groups = "drop"
+        )
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+      
+    } else if (type == "count") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(metric = sum(!!y_sym, na.rm = TRUE), .groups = "drop") %>%
+        dplyr::mutate(pct = metric / sum(metric, na.rm = TRUE))
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    }
+    
+  } else {
+    # case when no y variable is supplied (calculating straight counts/proportions of rows)
+    summary_df <- data %>%
+      dplyr::count(!!x_sym) %>%
+      dplyr::mutate(pct = n / sum(n))
+    
+    if (type == "proportion") {
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = pct)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    } else {
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = n)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = paste0(scales::comma(n), " (", scales::percent(pct, accuracy = 0.1), ")")),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    }
+  }
+  
+  # chart polishing and design options
   p <- p +
     ggplot2::labs(
       title = title,
       subtitle = subtitle,
-      x = if(is.null(x_lab)) as_label(x_sym) else x_lab,
+      x = if(is.null(x_lab)) x_char else x_lab,
       y = y_lab
     ) +
-    # expand y axis further to accommodate longer labels
-    ggplot2::scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +
+    ggplot2::scale_y_continuous(labels = scales::comma, expand = ggplot2::expansion(mult = c(0, 0.2))) +
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(
-      panel.grid.major.x = element_blank(),
-      panel.grid.minor = element_blank(),
-      plot.title = element_text(face = "bold", size = 14, color = "#231F20"),
-      plot.subtitle = element_text(size = 11, color = "#58595B"),
-      axis.title = element_text(face = "bold", color = "#231F20"),
-      axis.text.x = element_text(angle = 45, hjust = 1, color = "#231F20"),
-      axis.text.y = element_text(color = "#231F20")
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(face = "bold", size = 14, color = "#231F20"),
+      plot.subtitle = ggplot2::element_text(size = 11, color = "#58595B"),
+      axis.title = ggplot2::element_text(face = "bold", color = "#231F20"),
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, color = "#231F20"),
+      axis.text.y = ggplot2::element_text(color = "#231F20")
     )
   
   return(p)
 }
 ```
+
+## plot bar top n
+
+```{r function-plot_bar_top_n}
+#' plot bar graphs for top n frequencies
+#'
+#' @param data dataframe
+#' @param x_var character vector x-axis variable
+#' @param y_var character vector variable to calculate mean or proportion on
+#' @param type character type of calculation: "count", "proportion", or "mean"
+#' @param n_top integer maximum number of highest value categories to display
+#' @param fill_col character vector of hex color code for fill
+#' @param title character vector of title
+#' @param subtitle character vector of subtitle
+#' @param x_lab character vector of label for x-axis
+#' @param y_lab character vector of label for y-axis
+#' @importFrom rlang ensym as_label
+#' @importFrom tidyr separate_rows
+#' @importFrom dplyr filter group_by summarize mutate slice_max ungroup desc
+#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous scale_x_discrete expansion theme_minimal theme element_blank element_text
+#' @importFrom scales percent comma
+#' @importFrom forcats fct_reorder
+#'
+#' @returns a ggplot object
+#' @export
+#'
+#' @examples
+#' \dontrun{plot_bar_top_n(data, x_var = "job_type", type = "count", n_top = 10)}
+plot_bar_top_n <- function(data, 
+                           x_var, 
+                           y_var = NULL, 
+                           type = c("count", "proportion", "mean"),
+                           n_top = 10,
+                           fill_col = "#0066A1",
+                           title = "top variable distribution", 
+                           subtitle = NULL, 
+                           x_lab = NULL, 
+                           y_lab = NULL) {
+  
+  type <- match.arg(type)
+  x_sym <- rlang::ensym(x_var)
+  x_char <- rlang::as_label(x_sym)
+  
+  # auto expand multiple response space separated text strings if present
+  # if (is.character(data[[x_char]])) {
+  #   data <- data %>% tidyr::separate_rows(!!x_sym, sep = " ")
+  # }
+  # 
+  # drop missing values from the grouping variable
+  data <- data %>% dplyr::filter(!is.na(!!x_sym))
+  
+  # standardizing labels based on the calculation metric
+  if (is.null(y_lab)) {
+    y_lab <- switch(type,
+                    "count" = "count",
+                    "proportion" = "proportion",
+                    "mean" = "mean")
+  }
+  
+  # internal data processing engine
+  if (!is.null(y_var)) {
+    y_sym <- rlang::ensym(y_var)
+    
+    if (type == "mean") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(metric = round(mean(!!y_sym, na.rm = TRUE)), .groups = "drop") %>%
+        dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+      
+    } else if (type == "proportion") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(metric = mean(!!y_sym == 1, na.rm = TRUE), .groups = "drop") %>%
+        dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+      
+    } else if (type == "count") {
+      summary_df <- data %>%
+        dplyr::group_by(!!x_sym) %>%
+        dplyr::summarize(metric = sum(!!y_sym, na.rm = TRUE), .groups = "drop") %>%
+        dplyr::mutate(pct = metric / sum(metric, na.rm = TRUE)) %>%
+        dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
+      
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    }
+    
+  } else {
+    # case when no y variable is supplied (calculating straight counts/proportions of rows)
+    summary_df <- data %>%
+      dplyr::count(!!x_sym) %>%
+      dplyr::mutate(pct = n / sum(n)) %>%
+      dplyr::slice_max(order_by = n, n = n_top, with_ties = FALSE)
+    
+    if (type == "proportion") {
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(pct)), y = pct)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    } else {
+      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(n)), y = n)) +
+        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
+        ggplot2::geom_text(
+          ggplot2::aes(label = paste0(scales::comma(n), " (", scales::percent(pct, accuracy = 0.1), ")")),
+          vjust = -0.5, size = 3, fontface = "bold"
+        )
+    }
+  }
+  
+  # chart polishing and design options
+  p <- p +
+    ggplot2::labs(
+      title = title,
+      subtitle = subtitle,
+      x = if(is.null(x_lab)) x_char else x_lab,
+      y = y_lab
+    ) +
+    ggplot2::scale_y_continuous(labels = scales::comma, expand = ggplot2::expansion(mult = c(0, 0.2))) +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(face = "bold", size = 14, color = "#231F20"),
+      plot.subtitle = ggplot2::element_text(size = 11, color = "#58595B"),
+      axis.title = ggplot2::element_text(face = "bold", color = "#231F20"),
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, color = "#231F20"),
+      axis.text.y = ggplot2::element_text(color = "#231F20")
+    )
+  
+  return(p)
+}
+```
+
+
+## patchwork grid plots
+
+```{r dunction-patchwork_grid}
+#' patchwork a list of plots with headers for sections arranged left to right with unified axes labels
+#'
+#' @param plot_list list of ggplot objects
+#' @param section_headers character vector of headers to place above sections
+#' @param plots_per_section integer number of plots that belong under each header
+#' @param nrow integer number of rows for the internal plot grids, defaults to 1
+#'
+#' @returns a patchwork layout object
+#' @importFrom patchwork wrap_elements wrap_plots plot_annotation
+#' @importFrom ggplot2 labs theme element_text margin element_blank
+#' @export
+patchwork_grid <- function(plot_list, section_headers, plots_per_section = 1, nrow = 1) {
+  
+  # validate that we have enough headers for the plots provided
+  num_sections <- ceiling(length(plot_list) / plots_per_section)
+  if (length(section_headers) < num_sections) {
+    stop("not enough section_headers provided for the number of plot groups")
+  }
+  
+  # extract global axis labels from the first plot before stripping them
+  global_x_lab <- plot_list[[1]]$labels$x
+  global_y_lab <- plot_list[[1]]$labels$y
+  
+  # strip inner labels to prevent repeating clutter across the panels
+  clean_plots <- lapply(plot_list, function(p) {
+    p + ggplot2::labs(x = NULL, y = NULL)
+  })
+  
+  wrapped_sections <- list()
+  
+  # process plots group by group to wrap them under a styled section header
+  for (i in seq_len(num_sections)) {
+    
+    # isolate the subset of plots for the current section
+    start_idx <- ((i - 1) * plots_per_section) + 1
+    end_idx <- min(i * plots_per_section, length(clean_plots))
+    sub_plots <- clean_plots[start_idx:end_idx]
+    
+    # assemble the sub-grid for this specific section arranged by row
+    section_grid <- patchwork::wrap_plots(sub_plots, nrow = nrow)
+    
+    # wrap the sub-grid as an element and attach a clean overarching title
+    wrapped_sections[[i]] <- patchwork::wrap_elements(panel = section_grid) +
+      ggplot2::labs(title = section_headers[i]) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          face = "bold", 
+          size = 14, 
+          color = "#231F20", 
+          margin = ggplot2::margin(b = 10, t = 5)
+        )
+      )
+  }
+  
+  # stitch all header-managed sections horizontally side-by-side
+  final_layout <- patchwork::wrap_plots(wrapped_sections, nrow = 1) +
+    patchwork::plot_annotation(
+      caption = global_x_lab, # uses caption style at bottom for clean centered x-axis label alignment
+      theme = ggplot2::theme(
+        plot.caption = ggplot2::element_text(face = "bold", size = 12, color = "#231F20", hjust = 0.5, margin = ggplot2::margin(t = 10))
+      )
+    )
+  
+  return(final_layout)
+}
+```
+
 
 ## add custom total
 
@@ -1234,6 +1539,33 @@ write_list_to_excel <- function(df_list, file_path) {
 }
 ```
 
+## flatten dm object
+
+```{r function-flatten_dm_by_names}
+#' flatten all tables within a dm object into a list of data frames
+#'
+#' @param dm_obj a dm data model object
+#'
+#' @returns a named list of flattened data frames
+#' @export
+flatten_dm_by_names <- function(dm_obj) {
+  # extract the structural table names directly from the dm object
+  tbl_names <- base::names(dm_obj)
+  
+  # loop through the valid names to flatten each table
+  df_list <- base::lapply(tbl_names, function(name) {
+    dm::dm_flatten_to_tbl(dm_obj, !!name)
+  })
+  
+  # reapply the names to the output list
+  names(df_list) <- tbl_names
+  
+  return(df_list)
+}
+```
+
+
+
 ## pre-process unocha registration
 
 
@@ -1250,6 +1582,7 @@ write_list_to_excel <- function(df_list, file_path) {
 #' @examples
 #' \dontrun{preprocess_reg()}
 #' 
+
 preprocess_reg <- function(df){
   df_out <- df %>% 
   dm_flatten_to_tbl(main)
@@ -2823,8 +3156,12 @@ automate_indicators <- function(df, cols) {
             return(indicator)
           } 
           
+          # explicitly separate affirmative responses from negative or uncertain ones
+          clean_x <- tolower(x)
           indicator <- dplyr::if_else(
-            stringr::str_detect(tolower(x), "no") | is.na(x), 
+            is.na(x) | 
+              clean_x == "no" | 
+              stringr::str_detect(clean_x, "not_at_all|not_really|dont_know|don't know"), 
             0, 
             1
           )
@@ -3257,6 +3594,85 @@ plot_household_leaflet <- function(data, lat_col, lon_col, village_col, county_c
   return(map)
 }
 ```
+
+
+```{r function-check_disability}
+#' validate and recode household disability flags based on repeat group ages
+#'
+#' @param df_out dataframe containing the main household data
+#' @param df_disab dataframe containing the individual repeat group data
+#' @param uuid_col character string of the ID column name in df_out (defaults to "uuid")
+#'
+#' @returns an updated version of df_out with corrected disability flags
+#'
+#' @export
+#'
+#' @examples
+#' # lower case comments without dots or dashes
+#' # create dummy main dataset
+#' main_df <- data.frame(
+#'   uuid = c("hh_1", "hh_2", "hh_3"),
+#'   HHM_disability = c("yes", "yes", "no"),
+#'   stringsAsFactors = FALSE
+#' )
+#' 
+#' # create dummy repeat group dataset
+#' repeat_df <- data.frame(
+#'   `_uuid` = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),
+#'   HHM_disability = c("yes", "no", "yes", "yes", "no"),
+#'   prot_disability_ind_age = c(1, 35, 2, 1, 40),
+#'   stringsAsFactors = FALSE,
+#'   check.names = FALSE
+#' )
+#' 
+#' # run the function
+#' output_df <- check_disability(main_df, repeat_df, uuid_col = "uuid")
+check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
+  
+  # step 1: isolate active disability rows and find the maximum age per household
+  hh_max_disab_age <- df_disab %>%
+    dplyr::filter(stringr::str_detect(base::tolower(HHM_disability), "yes")) %>%
+    dplyr::group_by(`_uuid`) %>%
+    dplyr::summarise(
+      max_age = base::max(prot_disability_ind_age, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # step 2: extract household IDs where the maximum disabled age is 2 or under
+  infant_only_uuids <- hh_max_disab_age %>%
+    dplyr::filter(max_age <= 2) %>%
+    dplyr::pull(`_uuid`)
+  
+  # step 3: calculate diagnostics for console visibility
+  total_infant_only_hh <- base::length(infant_only_uuids)
+  
+  # step 4: recode the main dataset if any invalid target households exist
+  df_out_updated <- df_out %>%
+    dplyr::mutate(
+      # lower case comments without dots or dashes
+      HHM_disability = dplyr::if_else(
+        .data[[uuid_col]] %in% infant_only_uuids,
+        "no",
+        HHM_disability
+      )
+    )
+  
+  # step 5: print diagnostic feedback to the console safely
+  base::message("--- disability check summary ---")
+  base::message(base::sprintf("households with active disability loops: %d", base::nrow(hh_max_disab_age)))
+  base::message(base::sprintf("households where all disabled members are <= 2: %d", total_infant_only_hh))
+  
+  if (total_infant_only_hh > 0) {
+    base::message("action: invalid household flags successfully recoded to 'no'")
+  } else {
+    base::message("action: no adjustments needed, all household flags are structurally valid")
+  }
+  base::message("--------------------------------")
+  
+  return(df_out_updated)
+}
+```
+
 
 <!--
 There can be other functions, examples and tests in your flat template.

@@ -13,7 +13,8 @@ create_summary_table(
   percent_type = "column",
   dichotomous_as_continuous = FALSE,
   report_median = FALSE,
-  label_characteristic = "Characteristic"
+  label_characteristic = "Characteristic",
+  round_continuous = FALSE
 )
 }
 \arguments{
@@ -29,11 +30,13 @@ create_summary_table(
 
 \item{percent_type}{character. percents by row or column}
 
-\item{dichotomous_as_continuous}{logical. treat binary 0/1 columns as continuous}
+\item{dichotomous_as_continuous}{logical. treat binary 0/1  and likert scale columns as continuous}
 
 \item{report_median}{logical. whether to include the median alongside the mean for continuous variables}
 
 \item{label_characteristic}{character. custom header text for the characteristic column}
+
+\item{round_continuous}{logical. whether to round continuous summaries to whole numbers instead of decimals}
 }
 \value{
 a gtsummary object that renders across all formats natively

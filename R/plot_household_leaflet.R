@@ -93,3 +93,78 @@ plot_household_leaflet <- function(data, lat_col, lon_col, village_col, county_c
   
   return(map)
 }
+
+#' validate and recode household disability flags based on repeat group ages
+#'
+#' @param df_out dataframe containing the main household data
+#' @param df_disab dataframe containing the individual repeat group data
+#' @param uuid_col character string of the ID column name in df_out (defaults to "uuid")
+#'
+#' @returns an updated version of df_out with corrected disability flags
+#'
+#' @export
+#'
+#' @examples
+#' # lower case comments without dots or dashes
+#' # create dummy main dataset
+#' main_df <- data.frame(
+#'   uuid = c("hh_1", "hh_2", "hh_3"),
+#'   HHM_disability = c("yes", "yes", "no"),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # create dummy repeat group dataset
+#' repeat_df <- data.frame(
+#'   `_uuid` = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),
+#'   HHM_disability = c("yes", "no", "yes", "yes", "no"),
+#'   prot_disability_ind_age = c(1, 35, 2, 1, 40),
+#'   stringsAsFactors = FALSE,
+#'   check.names = FALSE
+#' )
+#'
+#' # run the function
+#' output_df <- check_disability(main_df, repeat_df, uuid_col = "uuid")
+check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
+  
+  # step 1: isolate active disability rows and find the maximum age per household
+  hh_max_disab_age <- df_disab %>%
+    dplyr::filter(stringr::str_detect(base::tolower(HHM_disability), "yes")) %>%
+    dplyr::group_by(`_uuid`) %>%
+    dplyr::summarise(
+      max_age = base::max(prot_disability_ind_age, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # step 2: extract household IDs where the maximum disabled age is 2 or under
+  infant_only_uuids <- hh_max_disab_age %>%
+    dplyr::filter(max_age <= 2) %>%
+    dplyr::pull(`_uuid`)
+  
+  # step 3: calculate diagnostics for console visibility
+  total_infant_only_hh <- base::length(infant_only_uuids)
+  
+  # step 4: recode the main dataset if any invalid target households exist
+  df_out_updated <- df_out %>%
+    dplyr::mutate(
+      # lower case comments without dots or dashes
+      HHM_disability = dplyr::if_else(
+        .data[[uuid_col]] %in% infant_only_uuids,
+        "no",
+        HHM_disability
+      )
+    )
+  
+  # step 5: print diagnostic feedback to the console safely
+  base::message("--- disability check summary ---")
+  base::message(base::sprintf("households with active disability loops: %d", base::nrow(hh_max_disab_age)))
+  base::message(base::sprintf("households where all disabled members are <= 2: %d", total_infant_only_hh))
+  
+  if (total_infant_only_hh > 0) {
+    base::message("action: invalid household flags successfully recoded to 'no'")
+  } else {
+    base::message("action: no adjustments needed, all household flags are structurally valid")
+  }
+  base::message("--------------------------------")
+  
+  return(df_out_updated)
+}

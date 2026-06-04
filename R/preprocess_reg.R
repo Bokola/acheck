@@ -12,6 +12,7 @@
 #' @examples
 #' \dontrun{preprocess_reg()}
 #'
+
 preprocess_reg <- function(df){
   df_out <- df %>% 
   dm_flatten_to_tbl(main)

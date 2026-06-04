@@ -19,11 +19,13 @@ flat_full.Rmd:
   - R/get_duplicates.R
   - R/get_distinct.R
   - R/plot_bar.R
+  - R/plot_bar_top_n.R
   - R/add_custom_total.R
   - R/collapse_villages.R
   - R/get_partial_matches.R
   - R/get_pii.R
   - R/write_list_to_excel.R
+  - R/flatten_dm_by_names.R
   - R/preprocess_reg.R
   - R/slice_reg.R
   - R/get_edit_data.R

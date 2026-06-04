@@ -38,8 +38,12 @@ automate_indicators <- function(df, cols) {
             return(indicator)
           } 
           
+          # explicitly separate affirmative responses from negative or uncertain ones
+          clean_x <- tolower(x)
           indicator <- dplyr::if_else(
-            stringr::str_detect(tolower(x), "no") | is.na(x), 
+            is.na(x) | 
+              clean_x == "no" | 
+              stringr::str_detect(clean_x, "not_at_all|not_really|dont_know|don't know"), 
             0, 
             1
           )
