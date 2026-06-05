@@ -16,13 +16,22 @@ cut_numeric <- function(
     breaks = c(16, 35, 60, Inf), 
     labels = c("16 - 35", "35 - 59", ">= 60")
 ){
+  # find the true minimum value of the input vector
+  min_val <- min(x, na.rm = TRUE)
+  
+  # if the minimum value is less than the first break point adjust the breaks and labels
+  if (min_val < breaks[1]) {
+    breaks <- c(min_val, breaks)
+    labels <- c(paste(min_val, "-", breaks[2] - 1), labels)
+  }
+  
   out <- cut(
     x,
-    # 16 is the start, 35 and 60 are the breaks, inf covers everything above
+    # breaks now safely includes the true minimum value
     breaks = breaks,
-    # labels for the resulting factor
+    # updated labels matching the intervals
     labels = labels,
-    # include the lowest value and make intervals right-open [x, y)
+    # include the lowest value and make intervals right open
     include.lowest = TRUE,
     right = FALSE
   )
