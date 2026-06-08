@@ -2,7 +2,7 @@ flat_full.Rmd:
   path: dev/flat_full.Rmd
   state: active
   R:
-  - R/add_gt_to_word.R
+  - R/format_num.R
   - R/clean_username.R
   - R/export_list_to_word.R
   - R/create_summary_table.R
@@ -50,8 +50,8 @@ flat_full.Rmd:
   - R/theme_plots.R
   - R/save_plots_to_png.R
   - R/plot_household.R
-  - R/plot_household_leaflet.R
-  tests: tests/testthat/test-add_gt_to_word.R
+  - R/plot_household_interactive.R
+  tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:
     flat_file: dev/flat_full.Rmd

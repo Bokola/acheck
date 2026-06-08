@@ -2,9 +2,9 @@
 % Please edit documentation in R/plot_household.R
 \name{plot_household}
 \alias{plot_household}
-\title{plot household density by clustering household level coordinates into villages}
+\title{plot individual household coordinates over all kenya county borders with a compass arrow}
 \usage{
-plot_household(data, lat_col, lon_col, village_col, county_col = NULL)
+plot_household(data, lat_col, lon_col, county_col = NULL)
 }
 \arguments{
 \item{data}{dataframe containing household level records}
@@ -13,13 +13,11 @@ plot_household(data, lat_col, lon_col, village_col, county_col = NULL)
 
 \item{lon_col}{character name of the longitude column}
 
-\item{village_col}{character name of the village column to group by}
-
 \item{county_col}{character optional name of the county column for coloring}
 }
 \value{
 a ggplot object
 }
 \description{
-plot household density by clustering household level coordinates into villages
+plot individual household coordinates over all kenya county borders with a compass arrow
 }
