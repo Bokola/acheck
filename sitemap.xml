@@ -33,6 +33,7 @@
 <url><loc>/reference/export_to_excel_formatted.html</loc></url>
 <url><loc>/reference/find_name_matches.html</loc></url>
 <url><loc>/reference/flatten_dm_by_names.html</loc></url>
+<url><loc>/reference/format_num.html</loc></url>
 <url><loc>/reference/gen_verification_criteria_table.html</loc></url>
 <url><loc>/reference/get_distinct.html</loc></url>
 <url><loc>/reference/get_duplicates.html</loc></url>
@@ -50,7 +51,7 @@
 <url><loc>/reference/plot_bar_top_n.html</loc></url>
 <url><loc>/reference/plot_faceted_donuts.html</loc></url>
 <url><loc>/reference/plot_household.html</loc></url>
-<url><loc>/reference/plot_household_leaflet.html</loc></url>
+<url><loc>/reference/plot_household_interactive.html</loc></url>
 <url><loc>/reference/plot_parts_donut.html</loc></url>
 <url><loc>/reference/preprocess.html</loc></url>
 <url><loc>/reference/preprocess_reg.html</loc></url>
