@@ -3829,6 +3829,30 @@ plot_household_counts_interactive <- function(data, lat_col, lon_col, group_by =
 }
 ```
 
+## get partner beneficiaries
+
+```{r function-get_partner_beneficiaries}
+#' filter and deduplicate beneficiary logs by agency partner
+#'
+#' @param df dataframe containing master registry logs
+#' @param partner character keyword used to identify the target agency, defaults to 'pgi'
+#' @param columns character vector of column names to distinct by, defaults to c('ben_name', 'ben_id_number')
+#'
+#' @returns a deduplicated dataframe containing partner specific records
+#' @importFrom dplyr filter distinct across all_of
+#' @export
+get_partner_beneficiaries <- function(df = df_out, partner = "pgi", columns = c("ben_name", "ben_id_number")) {
+  
+  # match agency keyword and remove duplicates based on dynamic columns argument configuration
+  processed_df <- df %>%
+    dplyr::filter(base::grepl(partner, enum_egency, ignore.case = TRUE)) %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(columns)), .keep_all = TRUE)
+  
+  return(processed_df)
+}
+```
+
+
 
 ```{r function-check_disability}
 #' validate and recode household disability flags based on repeat group ages

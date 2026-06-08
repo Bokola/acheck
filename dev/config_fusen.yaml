@@ -51,6 +51,7 @@ flat_full.Rmd:
   - R/save_plots_to_png.R
   - R/plot_household_counts.R
   - R/plot_household_counts_interactive.R
+  - R/get_partner_beneficiaries.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:
