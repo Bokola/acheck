@@ -274,10 +274,12 @@ patchwork_grid <- function(plot_list, section_headers, plots_per_section = 1, nr
 
 ## save plots as .png
 
-## household points static
+
+## plot household counts
 
 
-## household plot interactive
+
+## household count plot interactive
 
 
 

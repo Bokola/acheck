@@ -17,6 +17,7 @@ Imports:
     forcats,
     geodata,
     ggplot2,
+    ggrepel,
     ggspatial,
     grDevices,
     grid,
