@@ -1298,7 +1298,7 @@ plot_bar_top_n <- function(data,
 
 ## patchwork grid plots
 
-```{r dunction-patchwork_grid}
+```{r function-patchwork_grid}
 #' patchwork a list of plots with headers for sections arranged left to right with unified axes labels
 #'
 #' @param plot_list list of ggplot objects

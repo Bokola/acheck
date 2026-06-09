@@ -20,6 +20,7 @@ flat_full.Rmd:
   - R/get_distinct.R
   - R/plot_bar.R
   - R/plot_bar_top_n.R
+  - R/patchwork_grid.R
   - R/add_custom_total.R
   - R/collapse_villages.R
   - R/get_partial_matches.R
