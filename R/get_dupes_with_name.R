@@ -7,27 +7,34 @@
 #' @param cols_select a list of unquoted column expressions to select, defaults to a predefined set
 #'
 #' @returns a filtered and pruned dataframe of duplicate rows
-#' @importFrom rlang ensym exprs
+#' @importFrom rlang ensyms exprs
 #' @importFrom janitor get_dupes
 #' @importFrom dplyr mutate select
 #' @export
 get_dupes_with_name <- function(
     data, 
     col = ben_name, 
-    cols_select = rlang::exprs(county, enum_egency, enum_name, ben_name, ben_id_number, dup_col, uuid)
+    cols_select = rlang::exprs(county, enum_egency, enum_name, ben_id_number, dup_col, uuid)
 ) {
   
-  # capture the checking column as a symbol
-  col_sym <- rlang::ensym(col)
+  # capture the checking columns safely as a list of symbols
+  col_syms <- rlang::ensyms(col)
   
-  # run the janitor deduplication filter and append the text name string column
+  # convert the captured symbols into character strings for label grouping
+  col_strings <- base::as.character(col_syms)
+  combined_label <- base::paste(col_strings, collapse = ", ")
+  
+  # run the janitor deduplication filter across all target symbols and append the tracking string
   processed_df <- data %>%
-    janitor::get_dupes(!!col_sym) %>%
-    dplyr::mutate(dup_col = base::as.character(col_sym))
+    janitor::get_dupes(!!!col_syms) %>%
+    dplyr::mutate(dup_col = combined_label)
   
-  # evaluate the custom select expression list by splicing it into the select pipeline
+  # inject and combine the checked column symbols directly into the selection expression list
+  final_select_exprs <- base::unique(c(col_syms, cols_select))
+  
+  # evaluate the complete unified selection expression list dynamically
   result <- processed_df %>%
-    dplyr::select(!!!cols_select)
+    dplyr::select(!!!final_select_exprs)
   
   return(result)
 }
