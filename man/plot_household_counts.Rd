@@ -2,14 +2,15 @@
 % Please edit documentation in R/plot_household_counts.R
 \name{plot_household_counts}
 \alias{plot_household_counts}
-\title{plot household aggregation text labels outside administrative boundaries connected by pointing arrows}
+\title{plot household aggregation counts using unicode location pins with bold plotmath ggrepel label text callouts}
 \usage{
 plot_household_counts(
   data,
   lat_col,
   lon_col,
   group_by = "ward",
-  compass_pos = "bl"
+  compass_pos = "bl",
+  font_size = 2.8
 )
 }
 \arguments{
@@ -22,10 +23,12 @@ plot_household_counts(
 \item{group_by}{character administrative grouping scale choice, either 'ward' or 'county'}
 
 \item{compass_pos}{character layout position for the north arrow, defaults to 'bl'}
+
+\item{font_size}{numeric. font size for labels}
 }
 \value{
 a ggplot object
 }
 \description{
-plot household aggregation text labels outside administrative boundaries connected by pointing arrows
+plot household aggregation counts using unicode location pins with bold plotmath ggrepel label text callouts
 }

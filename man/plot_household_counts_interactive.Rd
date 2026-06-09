@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_household_counts_interactive.R
 \name{plot_household_counts_interactive}
 \alias{plot_household_counts_interactive}
-\title{plot interactive household count markers of equal size that reveal a summary tooltip on hover}
+\title{plot interactive household count markers using real location pin icons positioned safely inside boundaries}
 \usage{
 plot_household_counts_interactive(
   data,
@@ -27,5 +27,5 @@ plot_household_counts_interactive(
 a leaflet map widget object
 }
 \description{
-plot interactive household count markers of equal size that reveal a summary tooltip on hover
+plot interactive household count markers using real location pin icons positioned safely inside boundaries
 }
