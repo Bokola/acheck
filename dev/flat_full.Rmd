@@ -3935,6 +3935,43 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
 ```
 
 
+## get dupes with name
+
+```{r function-get_dupes_with_name}
+#' get duplicate rows, track the checked field, and subset down to designated columns via an argument
+#'
+#' @param data a dataframe or tibble
+#' @param col the unquoted column name to check for duplicates, defaults to ben_name
+#' @param cols_select a list of unquoted column expressions to select, defaults to a predefined set
+#'
+#' @returns a filtered and pruned dataframe of duplicate rows
+#' @importFrom rlang ensym exprs
+#' @importFrom janitor get_dupes
+#' @importFrom dplyr mutate select
+#' @export
+get_dupes_with_name <- function(
+    data, 
+    col = ben_name, 
+    cols_select = rlang::exprs(county, enum_egency, enum_name, ben_name, ben_id_number, dup_col, uuid)
+) {
+  
+  # capture the checking column as a symbol
+  col_sym <- rlang::ensym(col)
+  
+  # run the janitor deduplication filter and append the text name string column
+  processed_df <- data %>%
+    janitor::get_dupes(!!col_sym) %>%
+    dplyr::mutate(dup_col = base::as.character(col_sym))
+  
+  # evaluate the custom select expression list by splicing it into the select pipeline
+  result <- processed_df %>%
+    dplyr::select(!!!cols_select)
+  
+  return(result)
+}
+```
+
+
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.
