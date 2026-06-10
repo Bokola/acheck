@@ -4,12 +4,14 @@
 \alias{clean_camp}
 \title{clean recode beneficiary camp}
 \usage{
-clean_camp(x, col_name = "ben_camp")
+clean_camp(x, col_name = "ben_camp", partner_col = "reforgp")
 }
 \arguments{
 \item{x}{dataframe}
 
-\item{col_name}{character. column with camp names}
+\item{col_name}{character column with camp names, defaults to 'ben_camp'}
+
+\item{partner_col}{character column with partner organization names, defaults to 'reforgp'}
 }
 \value{
 dataframe
@@ -18,5 +20,5 @@ dataframe
 clean recode beneficiary camp
 }
 \examples{
-\dontrun{clean_camp(x, col_name = "ben_camp")}
+\dontrun{clean_camp(x, col_name = "ben_camp", partner_col = "reforgp")}
 }
