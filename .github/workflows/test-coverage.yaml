@@ -37,8 +37,6 @@ jobs:
         shell: Rscript {0}
 
       - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
-        env:
-          CODECOV_SKIP_VALIDATION: true
         with:
           # Fail if error if not on PR, or if on PR and token is given
           fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN }}
@@ -46,6 +44,8 @@ jobs:
           plugins: noop
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
+          # natively skips binary gpg signature checks within the action wrapper
+          skip_validation: true
 
       - name: Show testthat output
         if: always()
