@@ -602,7 +602,35 @@ get_standard_villages <- function(data1 = df_partner, data2 = df_clean) {
 
 ## pull kobo data
 
+
 ```{r function-pull_kobo_data}
+#' pull data from kobo API
+#'
+#' @param url character. Kobotoolbox url
+#' @param project_id character. project id
+#' @param token character. project token
+#'
+#' @returns a list
+#' @export
+#'
+#' @examples
+#' \dontrun{pull_kobo_data()}
+pull_kobo_data <- function(
+    url = Sys.getenv("kobo_url"),
+    project_id = Sys.getenv("unocha_id"),
+    token = Sys.getenv("unocha_token")
+    
+){
+  
+  robotoolbox::kobo_setup(url = url, token = token)
+  
+  df <- robotoolbox::kobo_data(project_id)
+  return(df)
+}
+```
+
+
+```{r function-pull_kobo_data_mpca}
 #' pull data from any kobo API project and align structures dynamically
 #'
 #' @param url character. Kobotoolbox url
@@ -611,10 +639,10 @@ get_standard_villages <- function(data1 = df_partner, data2 = df_clean) {
 #'
 #' @returns a clean dataframe matching manual excel column conventions universally
 #' @export
-pull_kobo_data <- function(
-    url = Sys.getenv("kobo_url"),
-    project_id = Sys.getenv("unocha_id"),
-    token = Sys.getenv("unocha_token")
+pull_kobo_data_mpca <- function(
+      url = Sys.getenv("kobo_url2"),
+  project_id = Sys.getenv("mpca_id"),
+  token = Sys.getenv("kobo_token")
 ){
   
   robotoolbox::kobo_setup(url = url, token = token)

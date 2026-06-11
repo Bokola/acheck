@@ -2,7 +2,7 @@
 % Please edit documentation in R/pull_kobo_data.R
 \name{pull_kobo_data}
 \alias{pull_kobo_data}
-\title{pull data from any kobo API project and align structures dynamically}
+\title{pull data from kobo API}
 \usage{
 pull_kobo_data(
   url = Sys.getenv("kobo_url"),
@@ -18,8 +18,11 @@ pull_kobo_data(
 \item{token}{character. project token}
 }
 \value{
-a clean dataframe matching manual excel column conventions universally
+a list
 }
 \description{
-pull data from any kobo API project and align structures dynamically
+pull data from kobo API
+}
+\examples{
+\dontrun{pull_kobo_data()}
 }
