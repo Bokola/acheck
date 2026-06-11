@@ -58,3 +58,5 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
+URL: https://bokola.github.io/acheck/
+BugReports: https://github.com/bokola/acheck/issues
