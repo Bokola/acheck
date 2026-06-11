@@ -54,6 +54,7 @@ flat_full.Rmd:
   - R/plot_household_counts_interactive.R
   - R/get_partner_beneficiaries.R
   - R/get_dupes_with_name.R
+  - R/label_kobo_columns.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:

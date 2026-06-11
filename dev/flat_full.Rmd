@@ -3978,6 +3978,49 @@ get_dupes_with_name <- function(
 }
 ```
 
+## label data 
+
+```{r function-label_kobo_columns}
+#' replace data column names with question labels from a kobo asset form metadata structure
+#'
+#' @param data dataframe containing the downloaded survey submission records
+#' @param kobo_asset a labelled dataframe fetched via robotoolbox
+#' @param lang character optional specific language label column to use if multilingual, e.g., 'English (en)'
+#'
+#' @returns dataframe with renamed columns
+#' @importFrom purrr map_chr
+#' @importFrom dplyr rename_with everything
+#' @export
+label_kobo_columns <- function(data, kobo_asset, lang = NULL) {
+  
+  # extract the label attributes from the kobo asset columns
+  label_mapping <- purrr::map_chr(kobo_asset, function(col) {
+    lbls <- attr(col, "label")
+    if (is.null(lbls)) return(NA_character_)
+    
+    # handle multilingual assets where labels might be a named vector
+    if (!is.null(lang) && lang %in% names(lbls)) {
+      return(lbls[lang])
+    }
+    
+    # default to the first available label if no language is specified
+    return(lbls[1])
+  })
+  
+  # drop missing or empty labels to keep original column names where mapping fails
+  label_mapping <- label_mapping[!is.na(label_mapping) & label_mapping != ""]
+  
+  # rename columns using the named vector mapping lookup
+  result <- data %>%
+    dplyr::rename_with(
+      ~ ifelse(.x %in% names(label_mapping), label_mapping[.x], .x),
+      dplyr::everything()
+    )
+  
+  return(result)
+}
+```
+
 
 <!--
 There can be other functions, examples and tests in your flat template.
