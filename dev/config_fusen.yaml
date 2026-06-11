@@ -13,6 +13,7 @@ flat_full.Rmd:
   - R/check_esr_registrations.R
   - R/get_standard_villages.R
   - R/pull_kobo_data.R
+  - R/clean_kobo_excel.R
   - R/cut_numeric.R
   - R/export_to_excel_formatted.R
   - R/export_to_excel_appended.R
@@ -55,6 +56,10 @@ flat_full.Rmd:
   - R/get_partner_beneficiaries.R
   - R/get_dupes_with_name.R
   - R/label_kobo_columns.R
+  - R/read_xlsform_asset.R
+  - R/convert_excel_headers.R
+  - R/label_with_xlsform.R
+  - R/parse_hhsize.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:

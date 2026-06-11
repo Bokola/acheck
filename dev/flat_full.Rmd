@@ -603,30 +603,158 @@ get_standard_villages <- function(data1 = df_partner, data2 = df_clean) {
 ## pull kobo data
 
 ```{r function-pull_kobo_data}
-#' pull data from kobo API
+#' pull data from any kobo API project and align structures dynamically
 #'
 #' @param url character. Kobotoolbox url
 #' @param project_id character. project id
 #' @param token character. project token
 #'
-#' @returns a list
+#' @returns a clean dataframe matching manual excel column conventions universally
 #' @export
-#'
-#' @examples
-#' \dontrun{pull_kobo_data()}
 pull_kobo_data <- function(
     url = Sys.getenv("kobo_url"),
     project_id = Sys.getenv("unocha_id"),
     token = Sys.getenv("unocha_token")
-    
 ){
   
   robotoolbox::kobo_setup(url = url, token = token)
   
-  df <- robotoolbox::kobo_data(project_id)
+  # pull all data rows and historical columns
+  df <- robotoolbox::kobo_data(project_id, all_versions = TRUE)
+  
+  # force convert metadata levels into plain text strings safely
+  df <- df %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), function(col) {
+      lbls <- attr(col, "labels")
+      if (!is.null(lbls)) {
+        lookup <- names(lbls)
+        names(lookup) <- as.character(lbls)
+        col_str <- as.character(col)
+        
+        return(dplyr::if_else(col_str %in% names(lookup), lookup[col_str], col_str))
+      }
+      return(col)
+    }))
+  
+  # 1. drop the plain 'uuid' column first to prevent naming collisions
+  df <- df %>%
+    dplyr::select(-dplyr::any_of("uuid"))
+  
+  # 2. rename standard system fields to match manual clean excel structures
+  df <- df %>%
+    dplyr::rename(
+      id = dplyr::any_of("_id"),
+      uuid = dplyr::any_of("_uuid"),
+      status = dplyr::any_of("_status"),
+      submission_time = dplyr::any_of("_submission_time"),
+      validation_status = dplyr::any_of("_validation_status"),
+      submitted_by = dplyr::any_of("_submitted_by"),
+      version = dplyr::any_of("__version__"),
+      meta_root_uuid = dplyr::any_of("rootUuid")
+    ) %>%
+    # project agnostic: converts ALL group delimiter dots to underscores
+    # handles patterns like 'a.sec_cluster' -> 'a_sec_cluster' or 'b.age' -> 'b_age'
+    dplyr::rename_with(~ stringr::str_replace_all(.x, "\\.", "_"))
+  
+  # 3. drop general platform-specific headers not in standard clean excel exports
+  df <- df %>%
+    dplyr::select(
+      -dplyr::any_of(c(
+        "_attachments",
+        "_xform_id_string",
+        "instanceID",
+        "instanceName",
+        "cordinates_latitude",
+        "cordinates_longitude",
+        "cordinates_altitude",
+        "cordinates_precision",
+        "index",
+        "tags",
+        "notes"
+      ))
+    )
+  
   return(df)
 }
 ```
+
+## clean manual kobo excel data
+
+```{r function-clean_kobo_excel}
+#' clean manual kobo excel data to align with api structure
+#'
+#' @param data data.frame. the raw excel data frame (ddd)
+#'
+#' @returns a cleaned data frame matching the transformed api structure
+#' @export
+#'
+#' @examples
+#' \dontrun{clean_kobo_excel(ddd)}
+clean_kobo_excel <- function(data) {
+  
+  if (!is.data.frame(data)) {
+    stop("input must be a data frame")
+  }
+  
+  # 1. remove trailing or leading white spaces from character columns
+  cleaned_df <- data %>%
+    dplyr::mutate(dplyr::across(dplyr::where(is.character), stringr::str_trim))
+  
+  # 2. handle potential duplicate columns before renaming
+  # if both "middle_name" and "ben_reff" exist, drop the plain "ben_reff" to avoid a collision
+  if ("middle_name" %in% names(cleaned_df) && "ben_reff" %in% names(cleaned_df)) {
+    cleaned_df <- cleaned_df %>% dplyr::select(-dplyr::any_of("ben_reff"))
+  }
+  
+  # 3. handle structural header renames to match code/value naming layout
+  cleaned_df <- cleaned_df %>%
+    dplyr::rename(
+      # map core name metadata variations
+      ben_first = dplyr::any_of("first_name"),
+      ben_reff = dplyr::any_of("middle_name"),
+      benf_last = dplyr::any_of("last_name"),
+      data_entry_name = dplyr::any_of("name_of_person_collecting_information"),
+      cordinates = dplyr::any_of("please_collect_the_beneficiary_gps_coordinates"),
+      
+      # convert exploded select_multiple text fields to match api value strings
+      livelihood_source_dnk = dplyr::any_of("livelihood_source_dont_know"),
+      livelihood_source_f_employment = dplyr::any_of("livelihood_source_formal_employment"),
+      livelihood_source_frm_lvstk = dplyr::any_of("livelihood_source_farming_livestock"),
+      livelihood_source_other_benflivelihood = dplyr::any_of("livelihood_source_other"),
+      livelihood_source_ss_business = dplyr::any_of("livelihood_source_small_scale_business")
+    )
+  
+  # 4. safely drop internal coordinate splits and extra tracker tags 
+  cleaned_df <- cleaned_df %>%
+    dplyr::select(
+      -dplyr::any_of(c(
+        "cordinates_latitude",
+        "cordinates_longitude",
+        "cordinates_altitude",
+        "cordinates_precision",
+        "please_collect_the_beneficiary_gps_coordinates_latitude",
+        "please_collect_the_beneficiary_gps_coordinates_longitude",
+        "please_collect_the_beneficiary_gps_coordinates_altitude",
+        "please_collect_the_beneficiary_gps_coordinates_precision",
+        "index",
+        "tags",
+        "notes"
+      ))
+    )
+  
+  # 5. ensure placeholder columns exist if they are present in df_lab structure
+  if ("ben_reff" %in% names(cleaned_df) && !("benf_sec" %in% names(cleaned_df))) {
+    cleaned_df <- cleaned_df %>% dplyr::rename(benf_sec = ben_reff)
+  }
+  
+  if (!"ref_priority" %in% names(cleaned_df)) {
+    cleaned_df$ref_priority <- NA_character_
+  }
+  
+  return(cleaned_df)
+}
+```
+
 
 ## categorize numerics
 
@@ -3984,7 +4112,7 @@ get_dupes_with_name <- function(
 #' replace data column names with question labels from a kobo asset form metadata structure
 #'
 #' @param data dataframe containing the downloaded survey submission records
-#' @param kobo_asset a labelled dataframe fetched via robotoolbox
+#' @param kobo_asset a labelled list/dataframe compiled from the xlsform or robotoolbox
 #' @param lang character optional specific language label column to use if multilingual, e.g., 'English (en)'
 #'
 #' @returns dataframe with renamed columns
@@ -4020,6 +4148,306 @@ label_kobo_columns <- function(data, kobo_asset, lang = NULL) {
   return(result)
 }
 ```
+
+## read xls form as kobo labelled assset
+
+```{r function-read_xlsform_asset}
+#' read an xlsform file and compile it into a kobo asset metadata list
+#'
+#' @param xlsform_path character. path to your local xlsform .xlsx or .xls file
+#'
+#' @returns a named list structured exactly like a robotoolbox kobo_asset object
+#' @importFrom readxl read_excel
+#' @importFrom dplyr filter select
+#' @export
+read_xlsform_asset <- function(xlsform_path) {
+  
+  # 1. read the survey design sheet from the workbook
+  survey_sheet <- readxl::read_excel(xlsform_path, sheet = "survey")
+  
+  # 2. filter down to rows that represent real questions with names
+  survey_questions <- survey_sheet %>%
+    dplyr::filter(!is.na(name))
+  
+  # 3. isolate all available label columns (handles multilingual headers like label::English (en))
+  label_cols <- names(survey_questions)[stringr::str_starts(names(survey_questions), "label")]
+  
+  # if no complex language markers exist, default back to standard label
+  if (length(label_cols) == 0 && "label" %in% names(survey_questions)) {
+    label_cols <- "label"
+  }
+  
+  # 4. dynamically build the mocked asset list structure
+  kobo_asset <- list()
+  
+  for (i in seq_len(nrow(survey_questions))) {
+    col_name <- survey_questions$name[i]
+    
+    # gather all label strings for the current question row
+    labels_vec <- c()
+    for (lbl_col in label_cols) {
+      lbl_val <- survey_questions[[lbl_col]][i]
+      
+      if (!is.na(lbl_val) && lbl_val != "") {
+        # normalize name format: strip 'label::' prefix if present to isolate language key
+        lang_key <- stringr::str_remove(lbl_col, "^label::")
+        if (lang_key == "label") lang_key <- "default"
+        
+        labels_vec[lang_key] <- lbl_val
+      }
+    }
+    
+    # structure each element as an empty mock column container holding label metadata
+    col_trigger <- list()
+    attr(col_trigger, "label") <- labels_vec
+    
+    kobo_asset[[col_name]] <- col_trigger
+  }
+  
+  return(kobo_asset)
+}
+```
+
+
+## convert kobo header labels to column values
+
+```{r function-convert_excel_headers}
+#' convert labeled excel headers to kobo code/value headers using form schema
+#'
+#' @param target_df data.frame. the raw excel data frame with text headers (df)
+#' @param project_id character. kobo project uid
+#' @param url character. Kobotoolbox url
+#' @param token character. project token
+#'
+#' @returns a data frame with clean value headers matching df_lab
+#' @export
+convert_excel_headers <- function(
+    target_df,
+    url = Sys.getenv("kobo_url2"),
+    project_id = Sys.getenv("mpca_id"),
+    token = Sys.getenv("kobo_token")
+) {
+  
+  # 1. pull the asset form schema from the api
+  robotoolbox::kobo_setup(url = url, token = token)
+  asset <- robotoolbox::kobo_asset(project_id)
+  form_schema <- robotoolbox::kobo_form(asset)
+  
+  # 2. isolate question row rows with non-empty names and labels
+  # clean the labels exactly how R cleans column names upon import
+  mapping_dict <- form_schema %>%
+    dplyr::filter(!is.na(name), !is.na(label)) %>%
+    dplyr::mutate(
+      clean_label = janitor::make_clean_names(label)
+    ) %>%
+    dplyr::select(clean_label, name) %>%
+    dplyr::distinct(clean_label, .keep_all = TRUE) %>%
+    tibble::deframe() # turns it into a named vector: c(clean_label = "name")
+  
+  # 3. safely handle complex select_multiple columns
+  # kobo appends choice suffixes to the question stem for binary choice columns
+  # e.g., 'what_is_the_current_source_of_livelihood..._formal_employment' -> 'livelihood_source_f_employment'
+  current_names <- names(target_df)
+  new_names <- sapply(current_names, function(col_name) {
+    
+    # direct hit check against standard questions
+    if (col_name %in% names(mapping_dict)) {
+      return(mapping_dict[[col_name]])
+    }
+    
+    # check if this column is a split choice from a select_multiple question block
+    # matches the longest matching stem and finds the underlying code value
+    matches <- sapply(names(mapping_dict), function(lbl) stringr::str_starts(col_name, fixed(lbl)))
+    if (any(matches)) {
+      best_fit_lbl <- names(which(matches))[which.max(nchar(names(which(matches))))]
+      base_code_name <- mapping_dict[[best_fit_lbl]]
+      
+      # extract just the choice suffix appended to the end of the text label
+      suffix <- stringr::str_remove(col_name, paste0("^", regexp_quote(best_fit_lbl), "_?"))
+      
+      # reconstruct the backend column name string structure
+      return(paste0(base_code_name, "_", suffix))
+    }
+    
+    # return original name if no match found (e.g. metadata markers like uuid, start, end)
+    return(col_name)
+  })
+  
+  # 4. assign the translated backend names onto your excel dataset
+  names(target_df) <- unname(new_names)
+  
+  # 5. a quick universal adjustment pass for project-agnostic group paths
+  # fixes remnants of section wrappers if your schema lists them cleanly
+  target_df <- target_df %>%
+    dplyr::rename_with(~ stringr::str_replace_all(.x, "\\.", "_"))
+  
+  return(target_df)
+}
+
+# helper function to escape characters for safe regex evaluation
+regexp_quote <- function(kv) {
+  gsub("([.[{}()^*+?|\\^$])", "\\\\\\1", kv)
+}
+```
+
+## label with xlsform
+
+```{r function-label_with_xlsform}
+#' convert and label an excel export using xlsform workbook sheets
+#'
+#' @param data_df data.frame. the raw exported kobo data with label headers (df)
+#' @param xlsform_path character. path to your local xlsform .xlsx workbook
+#'
+#' @returns a clean data frame with code headers and labeled categorical values
+#' @export
+label_with_xlsform <- function(data_df, xlsform_path) {
+  
+  # 1. read the design sheets from the xlsform template
+  survey_sheet  <- readxl::read_excel(xlsform_path, sheet = "survey")
+  choices_sheet <- readxl::read_excel(xlsform_path, sheet = "choices")
+  
+  # 2. handle column header conversion (label string -> code name)
+  # ensure we only target actual question rows with values
+  survey_clean <- survey_sheet %>%
+    dplyr::filter(!is.na(name), !is.na(label)) %>%
+    dplyr::mutate(clean_label = janitor::make_clean_names(label))
+  
+  # generate a named mapping dictionary vector: c(clean_label = "name")
+  header_dict <- survey_clean %>%
+    dplyr::select(clean_label, name) %>%
+    dplyr::distinct(clean_label, .keep_all = TRUE) %>%
+    tibble::deframe()
+  
+  current_names <- names(data_df)
+  new_names <- sapply(current_names, function(col_name) {
+    # check for a direct match
+    if (col_name %in% names(header_dict)) {
+      return(header_dict[[col_name]])
+    }
+    
+    # check for select_multiple split columns
+    # loops through labels to find if col_name starts with a known stem label
+    matches <- sapply(names(header_dict), function(lbl) stringr::str_starts(col_name, fixed(lbl)))
+    if (any(matches)) {
+      best_fit_lbl <- names(which(matches))[which.max(nchar(names(which(matches))))]
+      base_code_name <- header_dict[[best_fit_lbl]]
+      
+      # isolate the text choice suffix and append it back to the clean code stem
+      suffix <- stringr::str_remove(col_name, paste0("^", gsub("([.[{}()^*+?|\\^$])", "\\\\\\1", best_fit_lbl), "_?"))
+      return(paste0(base_code_name, "_", suffix))
+    }
+    return(col_name)
+  })
+  
+  names(data_df) <- unname(new_names)
+  
+  # 3. handle categorical row value labeling
+  # extract the choice list links from the question types (e.g., 'select_one list_name')
+  questions_with_choices <- survey_clean %>%
+    dplyr::filter(stringr::str_detect(type, "select_")) %>%
+    dplyr::mutate(
+      list_name = stringr::str_extract(type, "(?<=select_[a-zA-Z0-9_]{1,100}[:space:]).*")
+    ) %>%
+    dplyr::filter(!is.na(list_name)) %>%
+    dplyr::select(name, list_name)
+  
+  # build dictionaries for each choice group inside the choices sheet
+  choices_clean <- choices_sheet %>%
+    dplyr::filter(!is.na(list_name), !is.na(name), !is.na(label)) %>%
+    dplyr::mutate(
+      name = as.character(name),
+      lookup_key = paste0(list_name, "__", name)
+    )
+  
+  choices_lookup <- choices_clean %>%
+    dplyr::select(lookup_key, label) %>%
+    dplyr::distinct(lookup_key, .keep_all = TRUE) %>%
+    tibble::deframe()
+  
+  # create a question-to-list mapping vector
+  q_to_list <- questions_with_choices %>% tibble::deframe()
+  
+  # 4. map row values across matching select columns
+  data_df <- data_df %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), function(col) {
+      col_name <- dplyr::cur_column()
+      
+      if (col_name %in% names(q_to_list)) {
+        list_name <- q_to_list[[col_name]]
+        col_str <- as.character(col)
+        
+        # construct lookup codes: listname__value
+        lookup_keys <- paste0(list_name, "__", col_str)
+        
+        col_mapped <- dplyr::if_else(
+          lookup_keys %in% names(choices_lookup),
+          choices_lookup[lookup_keys],
+          col_str
+        )
+        return(col_mapped)
+      }
+      return(col)
+    }))
+  
+  # universal pass to remove group dot leftovers if present
+  data_df <- data_df %>%
+    dplyr::rename_with(~ stringr::str_replace_all(.x, "\\.", "_"))
+  
+  return(data_df)
+}
+```
+
+
+## parse hh size
+
+```{r function-parse_hhsize}
+#' Parse and extract household size as an integer vector
+#'
+#' This function sanitizes a character vector of household sizes containing
+#' mixed entries (e.g., "5(3F:2M)", "Size 9", "s6"), discarding data entry 
+#' noise like phone numbers, registration IDs, or full names.
+#'
+#' @param x character. A vector containing raw household size values.
+#'
+#' @returns An integer vector of clean household sizes.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' clean_sizes <- parse_hhsize(df$ben_hhsize)
+#' }
+parse_hhsize <- function(x) {
+  
+  # convert vector to character and make uniform for regex matching
+  working_vec <- stringr::str_trim(as.character(x))
+  working_vec <- stringr::str_to_lower(working_vec)
+  
+  # perform structural parsing based on prioritized text patterns
+  clean_vec <- dplyr::case_when(
+    # extract leading total digits before bracketed breakdowns: '5(3f:2m)' -> 5
+    stringr::str_detect(working_vec, "^\\d+\\s*\\(") ~ 
+      stringr::str_extract(working_vec, "^\\d+"),
+    
+    # isolate strings with descriptive prefix layout: 'size 9' or 'fs- 5' -> 9 or 5
+    stringr::str_detect(working_vec, "^(size|fs|fs-|s)\\s*\\d+$") ~ 
+      stringr::str_extract(working_vec, "\\d+"),
+    
+    # isolate strings with standalone gender suffix layout: '3m' or '6f' -> 3 or 6
+    stringr::str_detect(working_vec, "^\\d+[mf]$") ~ 
+      stringr::str_extract(working_vec, "^\\d+"),
+    
+    # safely convert known text noise, registration IDs, and phone numbers to NA
+    stringr::str_detect(working_vec, "-|\\s[a-z]|^07") ~ NA_character_,
+    
+    # keep remaining clean structures intact
+    TRUE ~ working_vec
+  )
+  
+  # return final casted integer vector
+  return(as.integer(clean_vec))
+}
+```
+
 
 
 <!--

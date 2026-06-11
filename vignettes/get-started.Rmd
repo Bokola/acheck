@@ -115,6 +115,9 @@ After inflating the template
 
 ## pull kobo data
 
+## clean manual kobo excel data
+
+
 ## categorize numerics
 
 ## export gtsummary object to excel workbook
@@ -221,6 +224,17 @@ After inflating the template
 ## get dupes with name
 
 ## label data 
+
+## read xls form as kobo labelled assset
+
+
+## convert kobo header labels to column values
+
+## label with xlsform
+
+
+## parse hh size
+
 
 
 <!--

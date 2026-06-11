@@ -3,7 +3,7 @@
 #' replace data column names with question labels from a kobo asset form metadata structure
 #'
 #' @param data dataframe containing the downloaded survey submission records
-#' @param kobo_asset a labelled dataframe fetched via robotoolbox
+#' @param kobo_asset a labelled list/dataframe compiled from the xlsform or robotoolbox
 #' @param lang character optional specific language label column to use if multilingual, e.g., 'English (en)'
 #'
 #' @returns dataframe with renamed columns

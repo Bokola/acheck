@@ -9,7 +9,7 @@ label_kobo_columns(data, kobo_asset, lang = NULL)
 \arguments{
 \item{data}{dataframe containing the downloaded survey submission records}
 
-\item{kobo_asset}{a labelled dataframe fetched via robotoolbox}
+\item{kobo_asset}{a labelled list/dataframe compiled from the xlsform or robotoolbox}
 
 \item{lang}{character optional specific language label column to use if multilingual, e.g., 'English (en)'}
 }
