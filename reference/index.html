@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">acheck</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.2</span>
       </span>
     </div>
 
@@ -87,6 +87,10 @@
         </td>
         <td><p>clean recode beneficiary camp</p></td>
       </tr><tr><td>
+          <p><code><a href="clean_kobo_excel.html">clean_kobo_excel()</a></code> </p>
+        </td>
+        <td><p>clean manual kobo excel data to align with api structure</p></td>
+      </tr><tr><td>
           <p><code><a href="clean_string.html">clean_string()</a></code> </p>
         </td>
         <td><p>clean string of spaces and non alphanumeric characters and make lower case</p></td>
@@ -98,6 +102,10 @@
           <p><code><a href="collapse_villages.html">collapse_villages()</a></code> </p>
         </td>
         <td><p>collapse villages that share targets, separating by /</p></td>
+      </tr><tr><td>
+          <p><code><a href="convert_excel_headers.html">convert_excel_headers()</a></code> </p>
+        </td>
+        <td><p>convert labeled excel headers to kobo code/value headers using form schema</p></td>
       </tr><tr><td>
           <p><code><a href="create_listing_table.html">create_listing_table()</a></code> </p>
         </td>
@@ -207,6 +215,10 @@
         </td>
         <td><p>replace data column names with question labels from a kobo asset form metadata structure</p></td>
       </tr><tr><td>
+          <p><code><a href="label_with_xlsform.html">label_with_xlsform()</a></code> </p>
+        </td>
+        <td><p>convert and label an excel export using xlsform workbook sheets</p></td>
+      </tr><tr><td>
           <p><code><a href="match_county_records.html">match_county_records()</a></code> </p>
         </td>
         <td><p>Filter and Match Payroll Records Against Registration Data by County</p></td>
@@ -214,6 +226,10 @@
           <p><code><a href="normalize_names.html">normalize_names()</a></code> </p>
         </td>
         <td><p>Normalize a Name Vector</p></td>
+      </tr><tr><td>
+          <p><code><a href="parse_hhsize.html">parse_hhsize()</a></code> </p>
+        </td>
+        <td><p>Parse and extract household size as an integer vector</p></td>
       </tr><tr><td>
           <p><code><a href="patchwork_grid.html">patchwork_grid()</a></code> </p>
         </td>
@@ -253,11 +269,15 @@
       </tr><tr><td>
           <p><code><a href="pull_kobo_data.html">pull_kobo_data()</a></code> </p>
         </td>
-        <td><p>pull data from kobo API</p></td>
+        <td><p>pull data from any kobo API project and align structures dynamically</p></td>
       </tr><tr><td>
           <p><code><a href="read_workbook.html">read_workbook()</a></code> </p>
         </td>
         <td><p>Read Excel sheets or an entire workbook into a list or data frame with clean names</p></td>
+      </tr><tr><td>
+          <p><code><a href="read_xlsform_asset.html">read_xlsform_asset()</a></code> </p>
+        </td>
+        <td><p>read an xlsform file and compile it into a kobo asset metadata list</p></td>
       </tr><tr><td>
           <p><code><a href="save_plots_to_png.html">save_plots_to_png()</a></code> </p>
         </td>

@@ -16,9 +16,11 @@
 <url><loc>/reference/check_esr_registrations.html</loc></url>
 <url><loc>/reference/choices.html</loc></url>
 <url><loc>/reference/clean_camp.html</loc></url>
+<url><loc>/reference/clean_kobo_excel.html</loc></url>
 <url><loc>/reference/clean_string.html</loc></url>
 <url><loc>/reference/clean_username.html</loc></url>
 <url><loc>/reference/collapse_villages.html</loc></url>
+<url><loc>/reference/convert_excel_headers.html</loc></url>
 <url><loc>/reference/create_listing_table.html</loc></url>
 <url><loc>/reference/create_summary_table.html</loc></url>
 <url><loc>/reference/cut_numeric.html</loc></url>
@@ -47,8 +49,10 @@
 <url><loc>/reference/get_vulnerability_data.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/label_kobo_columns.html</loc></url>
+<url><loc>/reference/label_with_xlsform.html</loc></url>
 <url><loc>/reference/match_county_records.html</loc></url>
 <url><loc>/reference/normalize_names.html</loc></url>
+<url><loc>/reference/parse_hhsize.html</loc></url>
 <url><loc>/reference/patchwork_grid.html</loc></url>
 <url><loc>/reference/pipe.html</loc></url>
 <url><loc>/reference/plot_bar.html</loc></url>
@@ -61,6 +65,7 @@
 <url><loc>/reference/preprocess_reg.html</loc></url>
 <url><loc>/reference/pull_kobo_data.html</loc></url>
 <url><loc>/reference/read_workbook.html</loc></url>
+<url><loc>/reference/read_xlsform_asset.html</loc></url>
 <url><loc>/reference/save_plots_to_png.html</loc></url>
 <url><loc>/reference/slice_reg.html</loc></url>
 <url><loc>/reference/standardize_names.html</loc></url>
