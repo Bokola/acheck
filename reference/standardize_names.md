@@ -1,0 +1,72 @@
+# Map and Standardize Administrative Names to Reference Values
+
+This function takes a dataset containing entered administrative names
+(such as sublocations or villages) and cross-references them against an
+official lookup table. It matches names using an optimal string
+alignment distance algorithm to automatically correct typos, casing
+differences, and minor variations.
+
+## Usage
+
+``` r
+standardize_names(data, match_col, ref_df, ref_col, max_dist = 2)
+```
+
+## Arguments
+
+- data:
+
+  A data frame containing the main survey or household records.
+
+- match_col:
+
+  A bare or quoted column name in `data` containing the entered names
+  that need correction.
+
+- ref_df:
+
+  A data frame serving as the official reference lookup table.
+
+- ref_col:
+
+  A bare or quoted column name in `ref_df` containing the true,
+  standardized reference names.
+
+- max_dist:
+
+  A numeric value specifying the maximum allowed string distance for a
+  match to be considered valid. Greater values allow more generous typo
+  corrections. Defaults to `2`.
+
+## Value
+
+A data frame with the same rows as `data`, where the original
+`match_col` values are replaced by the true values from `ref_col`.
+Unmatched records will retain their original values or return `NA` if
+completely outside the distance threshold.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# dummy raw survey data with typos
+survey_records <- data.frame(
+  household_id = 1:4,
+  entered_sublocation = c("Muguga ", "Kikuyu", "sigona", "UnknownPlace")
+)
+
+# true official reference registry
+official_sublocations <- data.frame(
+  true_name = c("Muguga", "Kikuyu", "Sigona", "Karai")
+)
+
+# clean and standardize the sublocation entries
+cleaned_data <- standardize_names(
+  data      = survey_records,
+  match_col = "entered_sublocation",
+  ref_df    = official_sublocations,
+  ref_col   = "true_name",
+  max_dist  = 3
+)
+} # }
+```
