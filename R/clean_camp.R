@@ -17,9 +17,9 @@ clean_camp <- function(x, col_name = "ben_camp", partner_col = "reforgp") {
     dplyr::mutate(
       dplyr::across(dplyr::all_of(col_name), ~ dplyr::case_when(
         # use the .data pronoun to dynamically evaluate the partner column name input
-        grepl("\\bna\\b", .x, ignore.case = TRUE) & grepl("HIAS", .data[[partner_col]], ignore.case = TRUE) ~ "Nairobi",
+        grepl("\\bna\\b|N/A|kawangware|kayole|kasarani|kangemi|kikuyu|home", .x, ignore.case = TRUE) & grepl("HIAS", .data[[partner_col]], ignore.case = TRUE) ~ "Nairobi",
         grepl("^k|^rece", .x, ignore.case = TRUE) ~ "Kakuma",
-        grepl("^nai|east|urban|umoja", .x, ignore.case = TRUE) ~ "Nairobi",
+        grepl("^nai|east|urban|umoja|rongai|settl", .x, ignore.case = TRUE) ~ "Nairobi",
         grepl("^daga|ley$|^ifo|f0|fo|^haga|^v|dad|daad", .x, ignore.case = TRUE) ~ "Daadab",
         is.na(.x) ~ "Nairobi",
         TRUE ~ .x

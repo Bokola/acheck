@@ -8,6 +8,14 @@
 \description{
 Custom functions for organizing ACTED humanitarian data for analysis.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://bokola.github.io/acheck/}
+  \item Report bugs at \url{https://github.com/bokola/acheck/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Basil Okola \email{okolabasilowiti@gmail.com} (\href{https://orcid.org/0000-0002-1047-9700}{ORCID})
 
