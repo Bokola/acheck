@@ -2,6 +2,14 @@
 
 Custom functions for organizing ACTED humanitarian data for analysis.
 
+## See also
+
+Useful links:
+
+- <https://bokola.github.io/acheck/>
+
+- Report bugs at <https://github.com/bokola/acheck/issues>
+
 ## Author
 
 **Maintainer**: Basil Okola <okolabasilowiti@gmail.com>
