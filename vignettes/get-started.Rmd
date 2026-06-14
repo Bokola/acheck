@@ -238,6 +238,7 @@ After inflating the template
 ## parse hh size
 
 
+## run sampling schemes
 
 <!--
 There can be other functions, examples and tests in your flat template.

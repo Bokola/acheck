@@ -4477,6 +4477,66 @@ parse_hhsize <- function(x) {
 ```
 
 
+## run sampling schemes
+
+```{r function-run_sample}
+#' run sampling schemes
+#'
+#' @param df_frame dataframe of sampling frame
+#' @param df_sample_n dataframe of sample size
+#' @param dir charcter. of output path
+#' @param type charcter. monitoring stage 
+#' @param name charcter. file name for otput
+#'
+#' @returns NULL
+#' @export
+#'
+#' @examples
+#' \dontrun{run_sample()}
+run_sample <- function(df_frame, df_sample_n, dir = Sys.getenv("dir_unocha"), type = "PDM", name = "FDG"){
+  large_villages <- df_frame %>%
+    summarise(
+      n = n(),
+      .by = c(county, village)
+    ) %>%
+    filter(n >= 50)
+  
+  ds <- df_frame %>%
+    dplyr::filter(grepl("^vuln", eligibility)) %>%
+    filter(
+      village %in% large_villages$village
+    )
+  
+  dd <- draw_pps_sample(
+    data = ds,
+    allocation_df = df_sample_n,
+    
+  )
+  
+  cols <- c("county",
+            "subloc",
+            "ward",
+            "village$",
+            "ben_name",
+            "ben_id_number",
+            "reg_num$",
+            "proxy_first",
+            "proxy_second",
+            "proxy_num"
+            
+  )
+  sample_out <- dd %>%
+    select(grep(paste(cols, collapse = "|"), names(.)))
+  out_lst <- split(sample_out, sample_out$county) %>%
+    purrr::set_names(sort(unique(sample_out$county)))
+  
+  acheck::write_list_to_excel(
+    out_lst,
+    file_path = file.path(dir, type, "sample", paste0(name, "_sample_", Sys.Date(), ".xlsx"))
+  )
+}
+
+```
 
 <!--
 There can be other functions, examples and tests in your flat template.

@@ -60,6 +60,7 @@ flat_full.Rmd:
   - R/convert_excel_headers.R
   - R/label_with_xlsform.R
   - R/parse_hhsize.R
+  - R/run_sample.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:
