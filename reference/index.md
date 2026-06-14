@@ -189,6 +189,9 @@
 - [`read_xlsform_asset()`](https://bokola.github.io/acheck/reference/read_xlsform_asset.md)
   : read an xlsform file and compile it into a kobo asset metadata list
 
+- [`run_sample()`](https://bokola.github.io/acheck/reference/run_sample.md)
+  : run sampling schemes
+
 - [`save_plots_to_png()`](https://bokola.github.io/acheck/reference/save_plots_to_png.md)
   : save a list of active plots into a grid using the png device
 
