@@ -14,7 +14,7 @@
 get_dupes_with_name <- function(
     data, 
     col = ben_name, 
-    cols_select = rlang::exprs(county, enum_egency, enum_name, ben_id_number, dup_col, uuid)
+    cols_select = rlang::exprs(county, enum_egency, enum_name,ben_name, ben_id_number,reg_num, dup_col, uuid)
 ) {
   
   # capture the checking columns safely as a list of symbols
