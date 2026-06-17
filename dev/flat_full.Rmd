@@ -4105,6 +4105,78 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid", age = 6) {
 }
 ```
 
+## calculate disability counts
+
+```{r function-calculate_disability_counts}
+#' calculate total disability counts vector
+#'
+#' @param data dataframe containing the disability columns
+#' @param disability_cols character vector of column names representing the domains
+#'
+#' @returns an integer vector containing the sum of matching disabilities per row
+#' @export
+calculate_disability_counts <- function(data, 
+                                        disability_cols = c(
+                                          "level_seeing_disability",
+                                          "level_hearing_disability",
+                                          "level_selfcare_disability",
+                                          "level_remembering_disability",
+                                          "level_walking_disability",
+                                          "level_communicating_disability"
+                                        )) {
+  
+  # extract just the target columns to evaluate row sums
+  subset_matrix <- data %>% 
+    dplyr::select(dplyr::all_of(disability_cols))
+  
+  # check for the target difficulty strings using a regular expression pattern
+  match_matrix <- base::apply(subset_matrix, 2, function(col) {
+    base::grepl("difficulty|at all", base::as.character(col), ignore.case = TRUE)
+  })
+  
+  # sum the matching occurrences row-by-row and return the integer vector
+  base::rowSums(match_matrix, na.rm = TRUE)
+}
+```
+
+## recode early childhood disability
+
+```{r function-recode_early_childhood_disability}
+#' reset disability columns based on age thresholds
+#'
+#' @param data dataframe containing the disability and age columns
+#' @param disability_cols character vector of column names representing the domains
+#' @param age_col character name of the column storing age values
+#'
+#' @returns a modified dataframe with recoded disability entries for children under 6
+#' @export
+recode_early_childhood_disability <- function(data,
+                                              disability_cols = c(
+                                                "level_seeing_disability",
+                                                "level_hearing_disability",
+                                                "level_selfcare_disability",
+                                                "level_remembering_disability",
+                                                "level_walking_disability",
+                                                "level_communicating_disability"
+                                              ),
+                                              age_col = "prot_disability_ind_age") {
+  data %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(disability_cols),
+        ~ dplyr::if_else(
+          # check if age exists and falls below the 6 year target threshold
+          !base::is.na(.data[[age_col]]) & .data[[age_col]] < 6,
+          "No difficulty",
+          # preserve the original cell contents if criteria are not met
+          base::as.character(.x)
+        )
+      )
+    )
+}
+```
+
+
 
 ## get dupes with name
 
