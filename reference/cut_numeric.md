@@ -5,11 +5,7 @@ categorize numeric cols
 ## Usage
 
 ``` r
-cut_numeric(
-  x,
-  breaks = c(16, 35, 60, Inf),
-  labels = c("16 - 35", "35 - 59", ">= 60")
-)
+cut_numeric(x, breaks = c(-Inf, 18, Inf), labels = c("<18", ">=18"))
 ```
 
 ## Arguments

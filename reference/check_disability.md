@@ -6,7 +6,7 @@ ages
 ## Usage
 
 ``` r
-check_disability(df_out, df_disab, uuid_col = "uuid")
+check_disability(df_out, df_disab, uuid_col = "uuid", age = 6)
 ```
 
 ## Arguments
@@ -22,6 +22,10 @@ check_disability(df_out, df_disab, uuid_col = "uuid")
 - uuid_col:
 
   character string of the ID column name in df_out (defaults to "uuid")
+
+- age:
+
+  numeric lower age limit
 
 ## Value
 
@@ -51,7 +55,7 @@ repeat_df <- data.frame(
 output_df <- check_disability(main_df, repeat_df, uuid_col = "uuid")
 #> --- disability check summary ---
 #> households with active disability loops: 2
-#> households where all disabled members are <= 2: 2
+#> households where all disabled members are < 6 (total: 2)
 #> action: invalid household flags successfully recoded to 'no'
 #> --------------------------------
 ```
