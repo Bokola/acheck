@@ -4,7 +4,7 @@
 \alias{check_disability}
 \title{validate and recode household disability flags based on repeat group ages}
 \usage{
-check_disability(df_out, df_disab, uuid_col = "uuid")
+check_disability(df_out, df_disab, uuid_col = "uuid", age = 6)
 }
 \arguments{
 \item{df_out}{dataframe containing the main household data}
@@ -12,6 +12,8 @@ check_disability(df_out, df_disab, uuid_col = "uuid")
 \item{df_disab}{dataframe containing the individual repeat group data}
 
 \item{uuid_col}{character string of the ID column name in df_out (defaults to "uuid")}
+
+\item{age}{numeric lower age limit}
 }
 \value{
 an updated version of df_out with corrected disability flags

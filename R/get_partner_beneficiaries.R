@@ -24,6 +24,7 @@ get_partner_beneficiaries <- function(df = df_out, partner = "pgi", columns = c(
 #' @param df_out dataframe containing the main household data
 #' @param df_disab dataframe containing the individual repeat group data
 #' @param uuid_col character string of the ID column name in df_out (defaults to "uuid")
+#' @param age numeric lower age limit
 #'
 #' @returns an updated version of df_out with corrected disability flags
 #'
@@ -49,7 +50,7 @@ get_partner_beneficiaries <- function(df = df_out, partner = "pgi", columns = c(
 #'
 #' # run the function
 #' output_df <- check_disability(main_df, repeat_df, uuid_col = "uuid")
-check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
+check_disability <- function(df_out, df_disab, uuid_col = "uuid", age = 6) {
   
   # step 1: isolate active disability rows and find the maximum age per household
   hh_max_disab_age <- df_disab %>%
@@ -62,7 +63,7 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
   
   # step 2: extract household IDs where the maximum disabled age is 2 or under
   infant_only_uuids <- hh_max_disab_age %>%
-    dplyr::filter(max_age <= 2) %>%
+    dplyr::filter(max_age < age) %>%
     dplyr::pull(`_uuid`)
   
   # step 3: calculate diagnostics for console visibility
@@ -82,7 +83,7 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid") {
   # step 5: print diagnostic feedback to the console safely
   base::message("--- disability check summary ---")
   base::message(base::sprintf("households with active disability loops: %d", base::nrow(hh_max_disab_age)))
-  base::message(base::sprintf("households where all disabled members are <= 2: %d", total_infant_only_hh))
+  base::message(base::sprintf("households where all disabled members are < %d (total: %d)", age, total_infant_only_hh))
   
   if (total_infant_only_hh > 0) {
     base::message("action: invalid household flags successfully recoded to 'no'")

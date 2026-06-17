@@ -13,8 +13,8 @@
 #' cut_numeric(c(1:10), c(-Inf,5, Inf), c("<=5", ">=6"))
 cut_numeric <- function(
     x, 
-    breaks = c(16, 35, 60, Inf), 
-    labels = c("16 - 35", "35 - 59", ">= 60")
+    breaks = c(-Inf, 18, Inf), 
+    labels = c("<18", ">=18")
 ){
   # find the true minimum value of the input vector
   min_val <- min(x, na.rm = TRUE)
