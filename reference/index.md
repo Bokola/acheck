@@ -14,6 +14,9 @@
 - [`automate_indicators()`](https://bokola.github.io/acheck/reference/automate_indicators.md)
   : Automate binary indicator variable creation
 
+- [`calculate_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_disability_counts.md)
+  : calculate total disability counts vector
+
 - [`check_disability()`](https://bokola.github.io/acheck/reference/check_disability.md)
   : validate and recode household disability flags based on repeat group
   ages
@@ -188,6 +191,9 @@
 
 - [`read_xlsform_asset()`](https://bokola.github.io/acheck/reference/read_xlsform_asset.md)
   : read an xlsform file and compile it into a kobo asset metadata list
+
+- [`recode_early_childhood_disability()`](https://bokola.github.io/acheck/reference/recode_early_childhood_disability.md)
+  : reset disability columns based on age thresholds
 
 - [`run_sample()`](https://bokola.github.io/acheck/reference/run_sample.md)
   : run sampling schemes

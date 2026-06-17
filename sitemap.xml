@@ -12,6 +12,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/add_gt_to_word.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/apply_corrections.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/automate_indicators.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/calculate_disability_counts.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_disability.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_esr_registrations.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/choices.html</loc></url>
@@ -67,6 +68,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/pull_kobo_data_mpca.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/read_workbook.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/read_xlsform_asset.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/recode_early_childhood_disability.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/run_sample.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/save_plots_to_png.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/slice_reg.html</loc></url>
