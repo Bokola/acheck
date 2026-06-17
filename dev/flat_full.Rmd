@@ -337,7 +337,8 @@ create_summary_table <- function(data,
     # set continuous digit precision based on rounding argument choice
     continuous_digits <- if (round_continuous) 0 else 1
     
-    df %>%
+    # build out the core table skeleton structures
+    base_summary <- df %>%
       dplyr::select({{cols}}, dplyr::any_of(group_by)) %>%
       gtsummary::tbl_summary(
         by = dplyr::any_of(group_by),
@@ -362,10 +363,23 @@ create_summary_table <- function(data,
           gtsummary::all_categorical() ~ c(0, 1)
         ),
         missing = "no"
-      ) %>%
+      )
+    
+    # append an overall summary tracking column explicitly if group_by is actively passed
+    if (!is.null(group_by)) {
+      base_summary <- base_summary %>%
+        gtsummary::add_overall(last = FALSE, col_label = "**Overall**")
+    }
+    
+    # append global metadata and formatting styles down the remaining pipeline
+    base_summary %>%
       gtsummary::add_n() %>%
       gtsummary::bold_labels() %>%
-      gtsummary::modify_header(label ~ paste0("**", label_characteristic, "**")) %>%
+      # selectively target non overall group headers using all_stat_cols helper wrapper
+      gtsummary::modify_header(
+        label ~ paste0("**", label_characteristic, "**"),
+        gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"
+      ) %>%
       gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
       gtsummary::modify_table_body(function(x) {
         attr(x, "table_styling")$columns_width <- NULL
