@@ -4177,6 +4177,35 @@ recode_early_childhood_disability <- function(data,
 ```
 
 
+## recode factor to character
+
+```{r function-recode_factor_to_character}
+#' recode factors to character
+#'
+#' @param x dataframe
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+#' \dontrun{recode_factor_to_character()}
+recode_factor_to_character <- function(x) {
+  x %>%
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::where(labelled::is.labelled),
+      # convert labels to factors, drop unused levels, and cast to character strings
+      ~ .x %>%
+        as_factor() %>%
+        forcats::fct_drop() %>%
+        base::as.character()
+    )
+  )
+  
+}
+```
+
+
 
 ## get dupes with name
 

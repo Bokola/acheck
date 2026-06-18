@@ -56,6 +56,7 @@ flat_full.Rmd:
   - R/get_partner_beneficiaries.R
   - R/calculate_disability_counts.R
   - R/recode_early_childhood_disability.R
+  - R/recode_factor_to_character.R
   - R/get_dupes_with_name.R
   - R/label_kobo_columns.R
   - R/read_xlsform_asset.R
