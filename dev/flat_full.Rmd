@@ -477,6 +477,94 @@ clean_string <- function(x) {
 }
 ```
 
+## clean phone number
+
+```{r function-clean_phone_number}
+#' clean phone number by adding 254 prexif
+#'
+#' @param x dataframe
+#' @param col character vector of phone number columns
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+clean_phone_number <- function(x, col = c("reg_num", "telephone_number", "proxy_num")) {
+  x %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::any_of(col),
+        ~ {
+          # convert elements to character format to guarantee stable evaluation
+          char_vec <- base::as.character(.x)
+          
+          dplyr::case_when(
+            # match format missing a leading country code or standard zero index
+            base::nchar(char_vec) == 9  ~ base::paste0("254", char_vec),
+            # match format structured with a leading single local digit zero index
+            base::nchar(char_vec) == 10 ~ base::gsub("^0", "254", char_vec),
+            # fall back and preserve raw entries unchanged if lengths do not match
+            TRUE ~ char_vec
+          )
+        }
+      )
+    )
+}
+```
+
+## process payroll
+
+```{r function-process_payroll}
+#' clean payroll data
+#'
+#' @param x dataframe
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
+process_payroll <- function(x) {
+  # find columns matching pattern to pass safely to standard selectors
+  drop_cols <- base::grep("^x", base::names(x), ignore.case = TRUE, value = TRUE)
+  
+  # target accounting columns requiring explicit type casting
+  numeric_targets <- c(
+    "cash_transfer_kes", 
+    "mpesa_sending_charges", 
+    "mpesa_withdrawal_charges", 
+    "total_amount_kes"
+  )
+  
+  x %>%
+    # drops matching columns safely if they exist, ignores if empty
+    dplyr::select(-dplyr::any_of(drop_cols)) %>%
+    
+    # defensive filter check: if "no" exists, filters out NAs; if missing, lets all rows pass
+    dplyr::filter(dplyr::if_any(dplyr::any_of("no"), ~ !base::is.na(.x)) | !("no" %in% base::names(.))) %>%
+    
+    # defensive mutate check: targets telephone_number safely using any_of
+    dplyr::mutate(
+      # dplyr::across(
+      #   dplyr::any_of("telephone_number"),
+      #   ~ base::gsub("^254", "0", base::as.character(.x))
+      # ),
+      # defensive numeric conversion check: loops through specified financial column keys if present
+      dplyr::across(
+        dplyr::any_of(numeric_targets),
+        ~ base::as.numeric(.x)
+      )
+    ) %>%
+    mutate(
+      across(
+        any_of(c("name_of_beneficiary", "name_of_proxy", "telephone_number", "id_number")),
+        clean_username
+      )
+    ) %>% clean_phone_number()
+}
+```
+
+
+
 ## recode beneficiary camps to known refugee camps
 
 ```{r function-clean_camp}

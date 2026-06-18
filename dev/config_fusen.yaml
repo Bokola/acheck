@@ -8,6 +8,8 @@ flat_full.Rmd:
   - R/create_summary_table.R
   - R/create_listing_table.R
   - R/clean_string.R
+  - R/clean_phone_number.R
+  - R/process_payroll.R
   - R/clean_camp.R
   - R/get_group_cols.R
   - R/check_esr_registrations.R

@@ -103,6 +103,12 @@ After inflating the template
 
 ## clean a vector of strings
 
+## clean phone number
+
+## process payroll
+
+
+
 ## recode beneficiary camps to known refugee camps
 
 
