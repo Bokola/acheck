@@ -53,7 +53,8 @@
 <span>  dichotomous_as_continuous <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  report_median <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  label_characteristic <span class="op">=</span> <span class="st">"Characteristic"</span>,</span>
-<span>  round_continuous <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  round_continuous <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  numeric_summary_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"sum"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,7 +91,7 @@
 
 
 <dt id="arg-report-median">report_median<a class="anchor" aria-label="anchor" href="#arg-report-median"></a></dt>
-<dd><p>logical. whether to include the median alongside the mean for continuous variables</p></dd>
+<dd><p>logical. whether to include the median alongside the mean for continuous variables (ignored if numeric_summary_type is "sum")</p></dd>
 
 
 <dt id="arg-label-characteristic">label_characteristic<a class="anchor" aria-label="anchor" href="#arg-label-characteristic"></a></dt>
@@ -99,6 +100,10 @@
 
 <dt id="arg-round-continuous">round_continuous<a class="anchor" aria-label="anchor" href="#arg-round-continuous"></a></dt>
 <dd><p>logical. whether to round continuous summaries to whole numbers instead of decimals</p></dd>
+
+
+<dt id="arg-numeric-summary-type">numeric_summary_type<a class="anchor" aria-label="anchor" href="#arg-numeric-summary-type"></a></dt>
+<dd><p>character. summary format for numeric columns, either "mean" or "sum"</p></dd>
 
 </dl></div>
     <div class="section level2">

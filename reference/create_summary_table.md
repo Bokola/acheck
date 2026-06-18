@@ -15,7 +15,8 @@ create_summary_table(
   dichotomous_as_continuous = FALSE,
   report_median = FALSE,
   label_characteristic = "Characteristic",
-  round_continuous = FALSE
+  round_continuous = FALSE,
+  numeric_summary_type = c("mean", "sum")
 )
 ```
 
@@ -52,7 +53,7 @@ create_summary_table(
 - report_median:
 
   logical. whether to include the median alongside the mean for
-  continuous variables
+  continuous variables (ignored if numeric_summary_type is "sum")
 
 - label_characteristic:
 
@@ -62,6 +63,10 @@ create_summary_table(
 
   logical. whether to round continuous summaries to whole numbers
   instead of decimals
+
+- numeric_summary_type:
+
+  character. summary format for numeric columns, either "mean" or "sum"
 
 ## Value
 
