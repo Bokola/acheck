@@ -589,6 +589,9 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
 - [`recode_early_childhood_disability()`](https://bokola.github.io/acheck/reference/recode_early_childhood_disability.md)
   : reset disability columns based on age thresholds
 
+- [`recode_factor_to_character()`](https://bokola.github.io/acheck/reference/recode_factor_to_character.md)
+  : recode factors to character
+
 - [`run_sample()`](https://bokola.github.io/acheck/reference/run_sample.md)
   : run sampling schemes
 
