@@ -9,9 +9,10 @@
 #' @param strata character. stratifying variable
 #' @param percent_type character. percents by row or column
 #' @param dichotomous_as_continuous logical. treat binary 0/1  and likert scale columns as continuous
-#' @param report_median logical. whether to include the median alongside the mean for continuous variables
+#' @param report_median logical. whether to include the median alongside the mean for continuous variables (ignored if numeric_summary_type is "sum")
 #' @param label_characteristic character. custom header text for the characteristic column
 #' @param round_continuous logical. whether to round continuous summaries to whole numbers instead of decimals
+#' @param numeric_summary_type character. summary format for numeric columns, either "mean" or "sum"
 #'
 #' @returns a gtsummary object that renders across all formats natively
 #' @export
@@ -24,7 +25,11 @@ create_summary_table <- function(data,
                                  dichotomous_as_continuous = FALSE,
                                  report_median = FALSE,
                                  label_characteristic = "Characteristic",
-                                 round_continuous = FALSE) {
+                                 round_continuous = FALSE,
+                                 numeric_summary_type = c("mean", "sum")) {
+  
+  # validate the requested numeric summary type layout choice
+  numeric_summary_type <- match.arg(numeric_summary_type)
   
   # internal helper to build the base table structure
   build_summary <- function(df) {
@@ -47,10 +52,17 @@ create_summary_table <- function(data,
       summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
     }
     
-    continuous_stat <- if (report_median) "{mean} ({median})" else "{mean}"
+    # assign the aggregate display token macro string based on chosen structural type
+    continuous_stat <- if (numeric_summary_type == "sum") {
+      "{sum}"
+    } else if (report_median) {
+      "{mean} ({median})"
+    } else {
+      "{mean}"
+    }
     
     # set continuous digit precision based on rounding argument choice
-    continuous_digits <- if (round_continuous) 0 else 1
+    continuous_digits <- if (round_continuous || numeric_summary_type == "sum") 0 else 1
     
     # build out the core table skeleton structures
     base_summary <- df %>%
@@ -69,6 +81,10 @@ create_summary_table <- function(data,
           # dynamically switch style format if handling raw numbers vs percentage indexes
           gtsummary::all_continuous() ~ function(x) {
             val <- na.omit(x)
+            # bypass index scaling logic entirely if calculating aggregate total sums
+            if (numeric_summary_type == "sum") {
+              return(gtsummary::style_number(x, digits = continuous_digits))
+            }
             if (length(val) > 0 && max(val) > 1) {
               return(gtsummary::style_number(x, digits = continuous_digits))
             } else {

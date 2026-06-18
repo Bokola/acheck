@@ -14,7 +14,8 @@ create_summary_table(
   dichotomous_as_continuous = FALSE,
   report_median = FALSE,
   label_characteristic = "Characteristic",
-  round_continuous = FALSE
+  round_continuous = FALSE,
+  numeric_summary_type = c("mean", "sum")
 )
 }
 \arguments{
@@ -32,11 +33,13 @@ create_summary_table(
 
 \item{dichotomous_as_continuous}{logical. treat binary 0/1  and likert scale columns as continuous}
 
-\item{report_median}{logical. whether to include the median alongside the mean for continuous variables}
+\item{report_median}{logical. whether to include the median alongside the mean for continuous variables (ignored if numeric_summary_type is "sum")}
 
 \item{label_characteristic}{character. custom header text for the characteristic column}
 
 \item{round_continuous}{logical. whether to round continuous summaries to whole numbers instead of decimals}
+
+\item{numeric_summary_type}{character. summary format for numeric columns, either "mean" or "sum"}
 }
 \value{
 a gtsummary object that renders across all formats natively
