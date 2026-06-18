@@ -427,6 +427,9 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
 - [`clean_kobo_excel()`](https://bokola.github.io/acheck/reference/clean_kobo_excel.md)
   : clean manual kobo excel data to align with api structure
 
+- [`clean_phone_number()`](https://bokola.github.io/acheck/reference/clean_phone_number.md)
+  : clean phone number by adding 254 prexif
+
 - [`clean_string()`](https://bokola.github.io/acheck/reference/clean_string.md)
   : clean string of spaces and non alphanumeric characters and make
   lower case
@@ -572,6 +575,9 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
 
 - [`preprocess_reg()`](https://bokola.github.io/acheck/reference/preprocess_reg.md)
   : preprocess unocha registrations
+
+- [`process_payroll()`](https://bokola.github.io/acheck/reference/process_payroll.md)
+  : clean payroll data
 
 - [`pull_kobo_data()`](https://bokola.github.io/acheck/reference/pull_kobo_data.md)
   : pull data from kobo API

@@ -18,6 +18,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/choices.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/clean_camp.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/clean_kobo_excel.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/clean_phone_number.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/clean_string.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/clean_username.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/collapse_villages.html</loc></url>
@@ -64,6 +65,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/plot_parts_donut.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/preprocess.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/preprocess_reg.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/process_payroll.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/pull_kobo_data.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/pull_kobo_data_mpca.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/read_workbook.html</loc></url>

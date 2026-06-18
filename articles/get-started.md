@@ -19,6 +19,10 @@ library(acheck)
 
 ### clean a vector of strings
 
+### clean phone number
+
+### process payroll
+
 ### recode beneficiary camps to known refugee camps
 
 ### get group columns
