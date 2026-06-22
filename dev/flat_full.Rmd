@@ -215,7 +215,7 @@ test_that("add_gt_to_word works correctly under different conditions", {
 ## clean names
 
 ```{r function-clean_username}
-#' Clean names by deleting extra spaces and convert to title case
+#' clean names by removing special characters, deleting extra spaces, and converting to title case
 #'
 #' @param x character vector of names to clean
 #'
@@ -224,8 +224,14 @@ test_that("add_gt_to_word works correctly under different conditions", {
 #'
 #' @examples
 #' \dontrun{clean_username()}
-clean_username <- function(x){
-  stringr::str_to_title(stringr::str_squish(x))
+clean_username <- function(x) {
+  x %>%
+    # remove all special characters like brackets, braces, and punctuation
+    stringr::str_remove_all("[^[:alnum:][:space:]]") %>%
+    # collapse duplicate whitespace down to single spaces
+    stringr::str_squish() %>%
+    # convert the cleaned text string to title case format
+    stringr::str_to_title()
 }
 ```
 

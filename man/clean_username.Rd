@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean_username.R
 \name{clean_username}
 \alias{clean_username}
-\title{Clean names by deleting extra spaces and convert to title case}
+\title{clean names by removing special characters, deleting extra spaces, and converting to title case}
 \usage{
 clean_username(x)
 }
@@ -13,7 +13,7 @@ clean_username(x)
 a vector
 }
 \description{
-Clean names by deleting extra spaces and convert to title case
+clean names by removing special characters, deleting extra spaces, and converting to title case
 }
 \examples{
 \dontrun{clean_username()}
