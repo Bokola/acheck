@@ -99,6 +99,8 @@ After inflating the template
 
 ## Create gtsummary table
 
+
+
 ## create a listing table using `gtreg{}`
 
 ## clean a vector of strings
@@ -187,6 +189,9 @@ After inflating the template
 
 
 ## systematic sample village level allocation
+
+## create survey object
+
 
 ## apply corrections
 

@@ -46,6 +46,7 @@ Imports:
     stringdist,
     stringi,
     stringr,
+    survey,
     tibble,
     tidyr,
     utils

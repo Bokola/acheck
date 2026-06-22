@@ -418,6 +418,140 @@ create_summary_table <- function(data,
 }
 ```
 
+```{r function-create_survey_summary_table}
+#' create a `gtsummary` table from a survey design object
+#'
+#' @param data a survey design object created via the survey package
+#' @param cols columns to include
+#' @param labels character. labels
+#' @param group_by character. grouping variable
+#' @param strata character. stratifying variable
+#' @param percent_type character. percents by row or column
+#' @param dichotomous_as_continuous logical. treat binary 0/1 and likert scale columns as continuous
+#' @param report_median logical. whether to include the median alongside the mean for continuous variables (ignored if numeric_summary_type is "sum")
+#' @param label_characteristic character. custom header text for the characteristic column
+#' @param round_continuous logical. whether to round continuous summaries to whole numbers instead of decimals
+#' @param numeric_summary_type character. summary format for numeric columns, either "mean" or "sum"
+#'
+#' @returns a gtsummary object that renders across all formats natively
+#' @export
+create_survey_summary_table <- function(data, 
+                                        cols = dplyr::everything(), 
+                                        labels = list(), 
+                                        group_by = NULL,
+                                        strata = NULL,
+                                        percent_type = "column",
+                                        dichotomous_as_continuous = FALSE,
+                                        report_median = FALSE,
+                                        label_characteristic = "Characteristic",
+                                        round_continuous = FALSE,
+                                        numeric_summary_type = c("mean", "sum")) {
+  
+  # validate the requested numeric summary type layout choice
+  numeric_summary_type <- match.arg(numeric_summary_type)
+  
+  # internal helper to build the base survey table structure
+  build_survey_summary <- function(srv_obj) {
+    
+    # establish structural types for the columns
+    summary_types <- list(gtsummary::all_categorical() ~ "categorical")
+    
+    if (dichotomous_as_continuous) {
+      # extract the raw dataframe variables from inside the survey design object matrix boundary
+      extracted_df <- srv_obj$variables %>% dplyr::select({{cols}})
+      numeric_likert_cols <- names(extracted_df)[sapply(extracted_df, is.numeric)]
+      
+      if (length(numeric_likert_cols) > 0) {
+        # explicitly convert these names into a formula assigning them to continuous format
+        likert_type_list <- stats::setNames(rep(list("continuous"), length(numeric_likert_cols)), numeric_likert_cols)
+        summary_types <- c(summary_types, likert_type_list)
+      }
+      
+      # add standard dichotomous continuous conversion selector rule
+      summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
+    }
+    
+    # assign the aggregate display token macro string based on chosen structural type
+    continuous_stat <- if (numeric_summary_type == "sum") {
+      "{sum}"
+    } else if (report_median) {
+      "{mean} ({median})"
+    } else {
+      "{mean}"
+    }
+    
+    # set continuous digit precision based on rounding argument choice
+    continuous_digits <- if (round_continuous || numeric_summary_type == "sum") 0 else 1
+    
+    # build out the core survey table skeleton structures using tbl_svysummary
+    base_summary <- srv_obj %>%
+      gtsummary::tbl_svysummary(
+        by = dplyr::any_of(group_by),
+        include = c({{cols}}, dplyr::any_of(group_by)),
+        label = labels,
+        percent = percent_type,
+        type = summary_types,
+        statistic = list(
+          gtsummary::all_continuous() ~ continuous_stat,
+          gtsummary::all_categorical() ~ "{n_unweighted} ({p}%)"
+        ),
+        digits = list(
+          # lower case comments without dots
+          # dynamically switch style format if handling raw numbers vs percentage indexes
+          gtsummary::all_continuous() ~ function(x) {
+            val <- na.omit(x)
+            # bypass index scaling logic entirely if calculating aggregate total sums
+            if (numeric_summary_type == "sum") {
+              return(gtsummary::style_number(x, digits = continuous_digits))
+            }
+            if (length(val) > 0 && max(val) > 1) {
+              return(gtsummary::style_number(x, digits = continuous_digits))
+            } else {
+              return(paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
+            }
+          },
+          gtsummary::all_categorical() ~ c(0, 1)
+        ),
+        missing = "no"
+      )
+    
+    # append an overall summary tracking column explicitly if group_by is actively passed
+    if (!is.null(group_by)) {
+      base_summary <- base_summary %>%
+        gtsummary::add_overall(last = FALSE, col_label = "**Overall**")
+    }
+    
+    # append global metadata and formatting styles down the remaining pipeline
+    base_summary %>%
+      gtsummary::bold_labels() %>%
+      # selectively target non overall group headers using all_stat_cols helper wrapper
+      gtsummary::modify_header(
+        label ~ paste0("**", label_characteristic, "**"),
+        gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"
+      ) %>%
+      gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
+      gtsummary::modify_table_body(function(x) {
+        attr(x, "table_styling")$columns_width <- NULL
+        return(x)
+      })
+  }
+  
+  # logic to handle stratification cleanly across survey configurations
+  raw_gtsummary <- if (!is.null(strata)) {
+    data %>%
+      gtsummary::tbl_strata(
+        strata = dplyr::all_of(strata),
+        .tbl_fun = ~ build_survey_summary(.x)
+      )
+  } else {
+    build_survey_summary(data)
+  }
+  
+  return(raw_gtsummary)
+}
+```
+
+
 ## create a listing table using `gtreg{}`
 
 ```{r function-create_listing_table}
@@ -2956,6 +3090,119 @@ draw_systematic_within_villages <- function(
     dplyr::ungroup()
 }
 ```
+
+## create survey object
+
+```{r function-create_survey_object}
+#' create a survey design object dynamically for any complex sampling design
+#'
+#' @param sample_df dataframe containing the final selected sample observations
+#' @param population_df dataframe containing the full original population sampling frame
+#' @param id_cols character vector identifying structural cluster nodes in cascading order (e.g., c("village", "hh_id"))
+#' @param strata_cols character vector containing names of stratification columns (optional, defaults to NULL)
+#' @param weight_col_name character string naming the output column for calculated weights
+#'
+#' @returns a configured survey design object
+#' @export
+create_survey_object <- function(sample_df, 
+                                        population_df, 
+                                        id_cols, 
+                                        strata_cols = NULL, 
+                                        weight_col_name = "sampling_weight") {
+  
+  # ensure package namespace dependencies are available
+  if (!base::requireNamespace("survey", quietly = TRUE)) {
+    base::stop("the 'survey' package is required but not installed")
+  }
+  
+  # handle missing variable safety up front
+  all_vars <- base::unique(c(id_cols, strata_cols))
+  missing_sample <- all_vars[!all_vars %in% base::names(sample_df)]
+  missing_pop    <- all_vars[!all_vars %in% base::names(population_df)]
+  
+  if (base::length(missing_sample) > 0 || base::length(missing_pop) > 0) {
+    base::stop("specified structural columns missing from sample or population dataframes")
+  }
+  
+  # step 1: isolate stage 1 units (primary sampling units) to evaluate selection probabilities
+  psu_col <- id_cols[1]
+  stage1_grouping <- base::unique(c(strata_cols, psu_col))
+  
+  pop_psus <- population_df %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(stage1_grouping))) %>%
+    dplyr::count(dplyr::across(dplyr::all_of(strata_cols)), name = "..total_PSUs_in_strata..")
+  
+  sample_psus <- sample_df %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(stage1_grouping))) %>%
+    dplyr::count(dplyr::across(dplyr::all_of(strata_cols)), name = "..sampled_PSUs_in_strata..")
+  
+  # map stage 1 probability across rows
+  stage1_probs <- population_df %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(stage1_grouping))) %>%
+    dplyr::left_join(pop_psus, by = strata_cols) %>%
+    dplyr::left_join(sample_psus, by = strata_cols) %>%
+    # if unstratified, handle empty grouping count variables safely
+    dplyr::mutate(
+      ..total_PSUs_in_strata..   = base::ifelse(base::is.na(..total_PSUs_in_strata..), base::length(base::unique(population_df[[psu_col]])), ..total_PSUs_in_strata..),
+      ..sampled_PSUs_in_strata.. = base::ifelse(base::is.na(..sampled_PSUs_in_strata..), base::length(base::unique(sample_df[[psu_col]])), ..sampled_PSUs_in_strata..),
+      ..prob_stage1..            = ..sampled_PSUs_in_strata.. / ..total_PSUs_in_strata..
+    ) %>%
+    dplyr::select(dplyr::all_of(stage1_grouping), "..prob_stage1..")
+  
+  # step 2: evaluate stage 2 units (secondary sampling units) if a second id column is specified
+  if (base::length(id_cols) > 1) {
+    ssu_grouping <- base::unique(c(strata_cols, id_cols[1:2]))
+    
+    pop_ssus <- population_df %>%
+      dplyr::count(dplyr::across(dplyr::all_of(id_cols[1])), name = "..total_SSUs_in_PSU..")
+    
+    sample_ssus <- sample_df %>%
+      dplyr::count(dplyr::across(dplyr::all_of(id_cols[1])), name = "..sampled_SSUs_in_PSU..")
+    
+    stage2_probs <- pop_ssus %>%
+      dplyr::left_join(sample_ssus, by = id_cols[1]) %>%
+      dplyr::mutate(
+        ..sampled_SSUs_in_PSU.. = base::ifelse(base::is.na(..sampled_SSUs_in_PSU..), 0, ..sampled_SSUs_in_PSU..),
+        ..prob_stage2..         = ..sampled_SSUs_in_PSU.. / ..total_SSUs_in_PSU..
+      ) %>%
+      dplyr::select(dplyr::all_of(id_cols[1]), "..prob_stage2..")
+    
+    # join stage 1 and stage 2 tracks together to compute joint weights
+    final_weights <- stage1_probs %>%
+      dplyr::inner_join(stage2_probs, by = id_cols[1]) %>%
+      dplyr::mutate(
+        !!weight_col_name := 1 / (..prob_stage1.. * ..prob_stage2..)
+      ) %>%
+      dplyr::select(dplyr::all_of(c(id_cols[1], weight_col_name)))
+    
+  } else {
+    # single stage designs pass flat inverse probability configurations down stream
+    final_weights <- stage1_probs %>%
+      dplyr::mutate(
+        !!weight_col_name := 1 / ..prob_stage1..
+      ) %>%
+      dplyr::select(dplyr::all_of(c(stage1_grouping, weight_col_name)))
+  }
+  
+  # step 3: combine finalized weights lookup to sample frame and create svydesign object
+  sample_with_weights <- sample_df %>%
+    dplyr::inner_join(final_weights, by = id_cols[1])
+  
+  id_formula     <- stats::as.formula(base::paste0("~", base::paste(id_cols, collapse = " + ")))
+  strata_formula <- if (!base::is.null(strata_cols)) stats::as.formula(base::paste0("~", base::paste(strata_cols, collapse = " + "))) else NULL
+  weight_formula <- stats::as.formula(base::paste0("~", weight_col_name))
+  
+  survey_obj <- survey::svydesign(
+    ids = id_formula,
+    strata = strata_formula,
+    weights = weight_formula,
+    data = sample_with_weights
+  )
+  
+  return(survey_obj)
+}
+```
+
 
 ## apply corrections
 

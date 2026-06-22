@@ -131,3 +131,134 @@ create_summary_table <- function(data,
   
   return(raw_gtsummary)
 }
+
+#' create a `gtsummary` table from a survey design object
+#'
+#' @param data a survey design object created via the survey package
+#' @param cols columns to include
+#' @param labels character. labels
+#' @param group_by character. grouping variable
+#' @param strata character. stratifying variable
+#' @param percent_type character. percents by row or column
+#' @param dichotomous_as_continuous logical. treat binary 0/1 and likert scale columns as continuous
+#' @param report_median logical. whether to include the median alongside the mean for continuous variables (ignored if numeric_summary_type is "sum")
+#' @param label_characteristic character. custom header text for the characteristic column
+#' @param round_continuous logical. whether to round continuous summaries to whole numbers instead of decimals
+#' @param numeric_summary_type character. summary format for numeric columns, either "mean" or "sum"
+#'
+#' @returns a gtsummary object that renders across all formats natively
+#' @export
+create_survey_summary_table <- function(data, 
+                                        cols = dplyr::everything(), 
+                                        labels = list(), 
+                                        group_by = NULL,
+                                        strata = NULL,
+                                        percent_type = "column",
+                                        dichotomous_as_continuous = FALSE,
+                                        report_median = FALSE,
+                                        label_characteristic = "Characteristic",
+                                        round_continuous = FALSE,
+                                        numeric_summary_type = c("mean", "sum")) {
+  
+  # validate the requested numeric summary type layout choice
+  numeric_summary_type <- match.arg(numeric_summary_type)
+  
+  # internal helper to build the base survey table structure
+  build_survey_summary <- function(srv_obj) {
+    
+    # establish structural types for the columns
+    summary_types <- list(gtsummary::all_categorical() ~ "categorical")
+    
+    if (dichotomous_as_continuous) {
+      # extract the raw dataframe variables from inside the survey design object matrix boundary
+      extracted_df <- srv_obj$variables %>% dplyr::select({{cols}})
+      numeric_likert_cols <- names(extracted_df)[sapply(extracted_df, is.numeric)]
+      
+      if (length(numeric_likert_cols) > 0) {
+        # explicitly convert these names into a formula assigning them to continuous format
+        likert_type_list <- stats::setNames(rep(list("continuous"), length(numeric_likert_cols)), numeric_likert_cols)
+        summary_types <- c(summary_types, likert_type_list)
+      }
+      
+      # add standard dichotomous continuous conversion selector rule
+      summary_types <- c(summary_types, list(gtsummary::all_dichotomous() ~ "continuous"))
+    }
+    
+    # assign the aggregate display token macro string based on chosen structural type
+    continuous_stat <- if (numeric_summary_type == "sum") {
+      "{sum}"
+    } else if (report_median) {
+      "{mean} ({median})"
+    } else {
+      "{mean}"
+    }
+    
+    # set continuous digit precision based on rounding argument choice
+    continuous_digits <- if (round_continuous || numeric_summary_type == "sum") 0 else 1
+    
+    # build out the core survey table skeleton structures using tbl_svysummary
+    base_summary <- srv_obj %>%
+      gtsummary::tbl_svysummary(
+        by = dplyr::any_of(group_by),
+        include = c({{cols}}, dplyr::any_of(group_by)),
+        label = labels,
+        percent = percent_type,
+        type = summary_types,
+        statistic = list(
+          gtsummary::all_continuous() ~ continuous_stat,
+          gtsummary::all_categorical() ~ "{n_unweighted} ({p}%)"
+        ),
+        digits = list(
+          # lower case comments without dots
+          # dynamically switch style format if handling raw numbers vs percentage indexes
+          gtsummary::all_continuous() ~ function(x) {
+            val <- na.omit(x)
+            # bypass index scaling logic entirely if calculating aggregate total sums
+            if (numeric_summary_type == "sum") {
+              return(gtsummary::style_number(x, digits = continuous_digits))
+            }
+            if (length(val) > 0 && max(val) > 1) {
+              return(gtsummary::style_number(x, digits = continuous_digits))
+            } else {
+              return(paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
+            }
+          },
+          gtsummary::all_categorical() ~ c(0, 1)
+        ),
+        missing = "no"
+      )
+    
+    # append an overall summary tracking column explicitly if group_by is actively passed
+    if (!is.null(group_by)) {
+      base_summary <- base_summary %>%
+        gtsummary::add_overall(last = FALSE, col_label = "**Overall**")
+    }
+    
+    # append global metadata and formatting styles down the remaining pipeline
+    base_summary %>%
+      gtsummary::bold_labels() %>%
+      # selectively target non overall group headers using all_stat_cols helper wrapper
+      gtsummary::modify_header(
+        label ~ paste0("**", label_characteristic, "**"),
+        gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"
+      ) %>%
+      gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ NA) %>%
+      gtsummary::modify_table_body(function(x) {
+        attr(x, "table_styling")$columns_width <- NULL
+        return(x)
+      })
+  }
+  
+  # logic to handle stratification cleanly across survey configurations
+  raw_gtsummary <- if (!is.null(strata)) {
+    data %>%
+      gtsummary::tbl_strata(
+        strata = dplyr::all_of(strata),
+        .tbl_fun = ~ build_survey_summary(.x)
+      )
+  } else {
+    build_survey_summary(data)
+  }
+  
+  return(raw_gtsummary)
+}

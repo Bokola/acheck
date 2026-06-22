@@ -40,6 +40,7 @@ flat_full.Rmd:
   - R/draw_cluster_sample.R
   - R/draw_systematic_across_villages.R
   - R/draw_systematic_within_villages.R
+  - R/create_survey_object.R
   - R/apply_corrections.R
   - R/read_workbook.R
   - R/standardize_names.R
