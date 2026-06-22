@@ -123,6 +123,10 @@
 - [`get_partial_matches()`](https://bokola.github.io/acheck/reference/get_partial_matches.md)
   : find partial matches between focal and beneficiary
 
+- [`get_partial_matches_extend()`](https://bokola.github.io/acheck/reference/get_partial_matches_extend.md)
+  : find partial matches and map the single best-matching focal name
+  onto dataframe 2
+
 - [`get_partner_beneficiaries()`](https://bokola.github.io/acheck/reference/get_partner_beneficiaries.md)
   : filter and deduplicate beneficiary logs by agency partner
 
