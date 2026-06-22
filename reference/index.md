@@ -41,7 +41,8 @@
   lower case
 
 - [`clean_username()`](https://bokola.github.io/acheck/reference/clean_username.md)
-  : Clean names by deleting extra spaces and convert to title case
+  : clean names by removing special characters, deleting extra spaces,
+  and converting to title case
 
 - [`collapse_villages()`](https://bokola.github.io/acheck/reference/collapse_villages.md)
   : collapse villages that share targets, separating by /

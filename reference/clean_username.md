@@ -1,6 +1,7 @@
-# Clean names by deleting extra spaces and convert to title case
+# clean names by removing special characters, deleting extra spaces, and converting to title case
 
-Clean names by deleting extra spaces and convert to title case
+clean names by removing special characters, deleting extra spaces, and
+converting to title case
 
 ## Usage
 
