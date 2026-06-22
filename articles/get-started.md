@@ -83,6 +83,8 @@ library(acheck)
 
 ### systematic sample village level allocation
 
+### create survey object
+
 ### apply corrections
 
 ### read excel workbook

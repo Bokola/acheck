@@ -60,6 +60,15 @@
 
   create a `gtsummary` table
 
+- [`create_survey_object()`](https://bokola.github.io/acheck/reference/create_survey_object.md)
+  : create a survey design object dynamically for any complex sampling
+  design
+
+- [`create_survey_summary_table()`](https://bokola.github.io/acheck/reference/create_survey_summary_table.md)
+  :
+
+  create a `gtsummary` table from a survey design object
+
 - [`cut_numeric()`](https://bokola.github.io/acheck/reference/cut_numeric.md)
   : categorize numeric cols
 
