@@ -1763,6 +1763,90 @@ get_partial_matches <- function(df, focal = "focal_name", beneficiary = "benef_n
 }
 ```
 
+```{r function-get_partial_matches_extend}
+#' find partial matches and map the single best-matching focal name onto dataframe 2
+#'
+#' @param df1 dataframe containing the focal variable (source of matched names)
+#' @param df2 dataframe containing the beneficiary variable (target destination)
+#' @param focal character name of the focal variable column in df1
+#' @param beneficiary character name of the beneficiary variable column in df2
+#' @param min_shared_words integer minimum number of unique words that must match to trigger a connection
+#'
+#' @returns dataframe 2 with an appended 'name_possible' column containing the highest probability match from df1
+#' @export
+get_partial_matches_extend <- function(df1, df2, focal = "focal_name", beneficiary = "benef_name", min_shared_words = 2) {
+  
+  # create unique row tracking keys to link matching vectors back safely
+  df1_clean <- df1 %>% dplyr::mutate(`..row_id_df1..` = dplyr::row_number())
+  df2_clean <- df2 %>% dplyr::mutate(`..row_id_df2..` = dplyr::row_number())
+  
+  # extract vectors directly from dataframes using base subsetting to bypass join name changes
+  focal_vec <- df1_clean[[focal]]
+  benef_vec <- df2_clean[[beneficiary]]
+  
+  # build a row-by-row logical evaluation matrix for all combinations
+  match_grid <- base::expand.grid(
+    row_df1 = base::seq_along(focal_vec),
+    row_df2 = base::seq_along(benef_vec)
+  )
+  
+  # map across combinations using vector indexes rather than data frame strings
+  is_partial_vec <- purrr::map2_lgl(match_grid$row_df1, match_grid$row_df2, ~ {
+    f_raw <- focal_vec[.x]
+    b_raw <- benef_vec[.y]
+    
+    # early exit check for missing values or empty strings
+    if (base::is.na(f_raw) || base::is.na(b_raw) || f_raw == "" || b_raw == "" || f_raw == "NA" || b_raw == "NA") {
+      FALSE
+    } else {
+      f_str <- base::as.character(f_raw)
+      b_str <- base::as.character(b_raw)
+      
+      # basic substring check first using base r grepl to avoid vector length bugs
+      matched <- base::grepl(b_str, f_str, fixed = TRUE) || base::grepl(f_str, b_str, fixed = TRUE)
+      
+      if (base::isTRUE(matched)) {
+        matched
+      } else {
+        # clean and split both strings into unique words
+        f_words <- base::unique(base::unlist(stringr::str_split(f_str, "\\s+")))
+        b_words <- base::unique(base::unlist(stringr::str_split(b_str, "\\s+")))
+        
+        # calculate intersect count of matching string tokens across both word arrays
+        shared_tokens <- base::intersect(f_words, b_words)
+        
+        # enforce condition tracking threshold counts to capture out of order permutations
+        base::length(shared_tokens) >= min_shared_words
+      }
+    }
+  })
+  
+  # filter combination map down to verified indexes only
+  valid_matches <- match_grid[is_partial_vec, ]
+  
+  # link valid matches back to strings and calculate Jaro-Winkler proximity metrics
+  matches_mapped <- valid_matches %>%
+    dplyr::mutate(
+      name_possible = focal_vec[row_df1],
+      target_benef  = benef_vec[row_df2],
+      # compute probability score between 0 and 1 using jaro winkler metric
+      match_prob = stringdist::stringsim(name_possible, target_benef, method = "jw")
+    ) %>%
+    # group by the df2 row index to isolate competing candidates
+    dplyr::group_by(row_df2) %>%
+    # keep only the single highest ranking match, choosing the first if tied
+    dplyr::slice_max(match_prob, n = 1, with_ties = FALSE) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(row_df2, name_possible)
+  
+  # join matched values onto df2 and drop internal row indexing trackers
+  df2_clean %>%
+    dplyr::left_join(matches_mapped, by = c("..row_id_df2.." = "row_df2")) %>%
+    dplyr::select(-`..row_id_df2..`)
+}
+```
+
+
 ## get personally identifying columns
 
 ```{r function-get_pii}
