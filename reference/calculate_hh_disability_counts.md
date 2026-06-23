@@ -1,12 +1,12 @@
-# calculate the total number of disabled individuals at the household level as a row attribute
+# calculate the total number of disabled individuals at the household level
 
 calculate the total number of disabled individuals at the household
-level as a row attribute
+level
 
 ## Usage
 
 ``` r
-calculate_disability_counts(
+calculate_hh_disability_counts(
   data,
   hh_id_col = "uuid",
   disability_cols = c("level_seeing_disability", "level_hearing_disability",
@@ -32,5 +32,5 @@ calculate_disability_counts(
 
 ## Value
 
-the original dataframe with a new column tracking total disabled
-household members
+an integer vector representing the total disabled household members for
+each row

@@ -409,7 +409,12 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
   : Automate binary indicator variable creation
 
 - [`calculate_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_disability_counts.md)
-  : calculate total disability counts vector
+  : calculate the total number of disabled individuals at the household
+  level as a row attribute
+
+- [`calculate_hh_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_hh_disability_counts.md)
+  : calculate the total number of disabled individuals at the household
+  level
 
 - [`check_disability()`](https://bokola.github.io/acheck/reference/check_disability.md)
   : validate and recode household disability flags based on repeat group
@@ -546,6 +551,9 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
 
 - [`get_vulnerability_data()`](https://bokola.github.io/acheck/reference/get_vulnerability_data.md)
   : get vulnerability criteria (physiological, nutritional etc)
+
+- [`grep_columns_in_list()`](https://bokola.github.io/acheck/reference/grep_columns_in_list.md)
+  : grep column names matching a pattern across a list of dataframes
 
 - [`label_kobo_columns()`](https://bokola.github.io/acheck/reference/label_kobo_columns.md)
   : replace data column names with question labels from a kobo asset

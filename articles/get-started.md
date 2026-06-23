@@ -33,6 +33,8 @@ library(acheck)
 
 ### find extra agency records
 
+### find column names in a list
+
 ### pull kobo data
 
 ### clean manual kobo excel data
@@ -120,6 +122,8 @@ library(acheck)
 ### get partner beneficiaries
 
 ### calculate disability counts
+
+### hh disability counts
 
 ### recode early childhood disability
 

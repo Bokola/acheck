@@ -13,6 +13,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/apply_corrections.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/automate_indicators.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/calculate_disability_counts.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/calculate_hh_disability_counts.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_disability.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_esr_registrations.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/choices.html</loc></url>
@@ -53,6 +54,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/get_pii.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/get_standard_villages.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/get_vulnerability_data.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/grep_columns_in_list.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/index.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/label_kobo_columns.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/label_with_xlsform.html</loc></url>
