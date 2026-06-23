@@ -14,6 +14,7 @@ flat_full.Rmd:
   - R/get_group_cols.R
   - R/check_esr_registrations.R
   - R/get_standard_villages.R
+  - R/find_extra_agency_records.R
   - R/pull_kobo_data.R
   - R/clean_kobo_excel.R
   - R/cut_numeric.R
