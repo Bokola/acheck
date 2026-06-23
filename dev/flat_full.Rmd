@@ -388,16 +388,23 @@ create_summary_table <- function(data,
       )
     
     # append an overall summary tracking column explicitly if group_by is actively passed
+    # modify label to read total instead of overall when running a sum aggregation table
     if (!is.null(group_by)) {
+      overall_label <- if (numeric_summary_type == "sum") "**Total**" else "**Overall**"
       base_summary <- base_summary %>%
-        gtsummary::add_overall(last = FALSE, col_label = "**Overall**")
+        gtsummary::add_overall(last = FALSE, col_label = overall_label)
     }
     
     # append global metadata and formatting styles down the remaining pipeline
+    # omit adding the sample size n column if calculating running metric sums
+    if (numeric_summary_type != "sum") {
+      base_summary <- base_summary %>% gtsummary::add_n()
+    }
+    
     base_summary %>%
-      gtsummary::add_n() %>%
       gtsummary::bold_labels() %>%
       # selectively target non overall group headers using all_stat_cols helper wrapper
+      # lower case comments without dots
       gtsummary::modify_header(
         label ~ paste0("**", label_characteristic, "**"),
         gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"
@@ -895,6 +902,55 @@ find_extra_agency_records <- function(matched_df = df_matched,
     )
   
   return(extra_records)
+}
+```
+
+
+## find column names in a list
+
+```{r function-grep_columns_in_list}
+#' grep column names matching a pattern across a list of dataframes
+#'
+#' @param df_list named list of dataframes to scan
+#' @param pattern character string or regex pattern to search for
+#' @param ignore_case logical. whether the search should be case-insensitive
+#'
+#' @returns a named list showing only the matched column names for each dataframe
+#' @export
+grep_columns_in_list <- function(df_list, pattern, ignore_case = TRUE) {
+  
+  # verify the incoming object is structurally a list format
+  if (!base::is.list(df_list)) {
+    base::stop("the input df_list must be a valid list object")
+  }
+  
+  # ensure all list elements have tracking names assigned
+  if (base::is.null(base::names(df_list))) {
+    base::names(df_list) <- base::paste0("df_", base::seq_along(df_list))
+  }
+  
+  # map across the list to extract matching column labels
+  matched_results <- purrr::map(df_list, function(df) {
+    
+    # pull all column elements present in the data frame boundary matrix
+    all_cols <- base::names(df)
+    
+    # run regular expression filter against the column metadata layer
+    matching_cols <- stringr::str_subset(
+      all_cols, 
+      pattern = stringr::regex(pattern, ignore_case = ignore_case)
+    )
+    
+    # return the matches if found, otherwise return null
+    if (base::length(matching_cols) > 0) {
+      return(matching_cols)
+    } else {
+      return(NULL)
+    }
+  })
+  
+  # compact down the list results to drop elements with zero matches
+  purrr::compact(matched_results)
 }
 ```
 
@@ -4590,36 +4646,98 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid", age = 6) {
 ## calculate disability counts
 
 ```{r function-calculate_disability_counts}
-#' calculate total disability counts vector
+#' calculate the total number of disabled individuals at the household level as a row attribute
 #'
-#' @param data dataframe containing the disability columns
+#' @param data dataframe containing the individual disability columns and a household identifier
+#' @param hh_id_col character name of the column storing the unique household id
 #' @param disability_cols character vector of column names representing the domains
 #'
-#' @returns an integer vector containing the sum of matching disabilities per row
+#' @returns the original dataframe with a new column tracking total disabled household members
 #' @export
 calculate_disability_counts <- function(data, 
-                                        disability_cols = c(
-                                          "level_seeing_disability",
-                                          "level_hearing_disability",
-                                          "level_selfcare_disability",
-                                          "level_remembering_disability",
-                                          "level_walking_disability",
-                                          "level_communicating_disability"
-                                        )) {
+                                           hh_id_col = "uuid",
+                                           disability_cols = c(
+                                             "level_seeing_disability",
+                                             "level_hearing_disability",
+                                             "level_selfcare_disability",
+                                             "level_remembering_disability",
+                                             "level_walking_disability",
+                                             "level_communicating_disability"
+                                           )) {
   
-  # extract just the target columns to evaluate row sums
+  # extract target columns to safely check row conditions
   subset_matrix <- data %>% 
-    dplyr::select(dplyr::all_of(disability_cols))
+    dplyr::select(dplyr::any_of(disability_cols))
   
-  # check for the target difficulty strings using a regular expression pattern
+  # match case-insensitively against the exact literal strings provided
+  # lower case comments without dots
   match_matrix <- base::apply(subset_matrix, 2, function(col) {
-    base::grepl("difficulty|at all", base::as.character(col), ignore.case = TRUE)
+    stringr::str_to_lower(base::as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
   })
   
-  # sum the matching occurrences row-by-row and return the integer vector
-  base::rowSums(match_matrix, na.rm = TRUE)
+  # identify if an individual has any disability compressed to a binary 1 or 0
+  individual_any_disability <- dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
+  
+  # append individual metric, group by household, and use mutate to broadcast the sum
+  data %>%
+    dplyr::mutate(ind_disabled = individual_any_disability) %>%
+    dplyr::group_by(.data[[hh_id_col]]) %>%
+    dplyr::mutate(
+      total_disabled_in_hh = base::sum(ind_disabled, na.rm = TRUE)
+    ) %>%
+    dplyr::ungroup() %>%
+    # drop the temporary individual binary indicator column to keep output clean
+    dplyr::select(-ind_disabled)
 }
 ```
+
+## hh disability counts
+
+```{r function-calculate_hh_disability_counts}
+#' calculate the total number of disabled individuals at the household level
+#'
+#' @param data dataframe containing the individual disability columns and a household identifier
+#' @param hh_id_col character name of the column storing the unique household id
+#' @param disability_cols character vector of column names representing the domains
+#'
+#' @returns an integer vector representing the total disabled household members for each row
+#' @export
+calculate_hh_disability_counts <- function(data, 
+                                           hh_id_col = "uuid",
+                                           disability_cols = c(
+                                             "level_seeing_disability",
+                                             "level_hearing_disability",
+                                             "level_selfcare_disability",
+                                             "level_remembering_disability",
+                                             "level_walking_disability",
+                                             "level_communicating_disability"
+                                           )) {
+  
+  # extract target columns to safely check row conditions
+  subset_matrix <- data %>% 
+    dplyr::select(dplyr::any_of(disability_cols))
+  
+  # match case-insensitively against the exact literal choices provided
+  # lower case comments without dots
+  match_matrix <- base::apply(subset_matrix, 2, function(col) {
+    stringr::str_to_lower(base::as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
+  })
+  
+  # collapse individual domains down to a single binary indicator per row
+  ind_disabled <- dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
+  
+  # create a temporary tracking block to calculate the broadcasted household sums safely
+  result_vector <- data %>%
+    dplyr::mutate(temp_ind_disabled = ind_disabled) %>%
+    dplyr::group_by(.data[[hh_id_col]]) %>%
+    dplyr::mutate(total_disabled_in_hh = base::sum(temp_ind_disabled, na.rm = TRUE)) %>%
+    dplyr::ungroup() %>%
+    dplyr::pull(total_disabled_in_hh)
+  
+  return(result_vector)
+}
+```
+
 
 ## recode early childhood disability
 

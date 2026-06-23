@@ -15,6 +15,7 @@ flat_full.Rmd:
   - R/check_esr_registrations.R
   - R/get_standard_villages.R
   - R/find_extra_agency_records.R
+  - R/grep_columns_in_list.R
   - R/pull_kobo_data.R
   - R/clean_kobo_excel.R
   - R/cut_numeric.R
@@ -59,6 +60,7 @@ flat_full.Rmd:
   - R/plot_household_counts_interactive.R
   - R/get_partner_beneficiaries.R
   - R/calculate_disability_counts.R
+  - R/calculate_hh_disability_counts.R
   - R/recode_early_childhood_disability.R
   - R/recode_factor_to_character.R
   - R/get_dupes_with_name.R

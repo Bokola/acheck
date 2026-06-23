@@ -97,16 +97,23 @@ create_summary_table <- function(data,
       )
     
     # append an overall summary tracking column explicitly if group_by is actively passed
+    # modify label to read total instead of overall when running a sum aggregation table
     if (!is.null(group_by)) {
+      overall_label <- if (numeric_summary_type == "sum") "**Total**" else "**Overall**"
       base_summary <- base_summary %>%
-        gtsummary::add_overall(last = FALSE, col_label = "**Overall**")
+        gtsummary::add_overall(last = FALSE, col_label = overall_label)
     }
     
     # append global metadata and formatting styles down the remaining pipeline
+    # omit adding the sample size n column if calculating running metric sums
+    if (numeric_summary_type != "sum") {
+      base_summary <- base_summary %>% gtsummary::add_n()
+    }
+    
     base_summary %>%
-      gtsummary::add_n() %>%
       gtsummary::bold_labels() %>%
       # selectively target non overall group headers using all_stat_cols helper wrapper
+      # lower case comments without dots
       gtsummary::modify_header(
         label ~ paste0("**", label_characteristic, "**"),
         gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"

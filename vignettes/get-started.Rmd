@@ -124,6 +124,9 @@ After inflating the template
 ## find extra agency records
 
 
+## find column names in a list
+
+
 ## pull kobo data
 
 
@@ -239,6 +242,9 @@ After inflating the template
 
 
 ## calculate disability counts
+
+## hh disability counts
+
 
 ## recode early childhood disability
 
