@@ -31,6 +31,8 @@ library(acheck)
 
 ### get standard villages
 
+### find extra agency records
+
 ### pull kobo data
 
 ### clean manual kobo excel data

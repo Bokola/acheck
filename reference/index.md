@@ -100,6 +100,10 @@
 - [`export_to_excel_formatted()`](https://bokola.github.io/acheck/reference/export_to_excel_formatted.md)
   : Export/write gtsummary output to excel workbook
 
+- [`find_extra_agency_records()`](https://bokola.github.io/acheck/reference/find_extra_agency_records.md)
+  : find unique extra records in a matched dataset missing from the
+  reference payroll
+
 - [`find_name_matches()`](https://bokola.github.io/acheck/reference/find_name_matches.md)
   : Identify Potential Beneficiary Name Matches From a Master Dataset
 
