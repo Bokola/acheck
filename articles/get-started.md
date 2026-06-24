@@ -123,7 +123,9 @@ library(acheck)
 
 ### calculate disability counts
 
-### hh disability counts
+### hh disability burden counts
+
+counts multiple forms of disability among household members.
 
 ### recode early childhood disability
 

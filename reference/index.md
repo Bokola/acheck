@@ -15,8 +15,7 @@
   : Automate binary indicator variable creation
 
 - [`calculate_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_disability_counts.md)
-  : calculate the total number of disabled individuals at the household
-  level as a row attribute
+  : calculate a row level individual disability indicator
 
 - [`calculate_hh_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_hh_disability_counts.md)
   : calculate the total number of disabled individuals at the household
