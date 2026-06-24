@@ -4646,24 +4646,22 @@ check_disability <- function(df_out, df_disab, uuid_col = "uuid", age = 6) {
 ## calculate disability counts
 
 ```{r function-calculate_disability_counts}
-#' calculate the total number of disabled individuals at the household level as a row attribute
+#' calculate a row level individual disability indicator
 #'
-#' @param data dataframe containing the individual disability columns and a household identifier
-#' @param hh_id_col character name of the column storing the unique household id
+#' @param data dataframe containing the individual disability columns
 #' @param disability_cols character vector of column names representing the domains
 #'
-#' @returns the original dataframe with a new column tracking total disabled household members
+#' @returns an integer vector of 1s and 0s indicating if the individual has any disability
 #' @export
 calculate_disability_counts <- function(data, 
-                                           hh_id_col = "uuid",
-                                           disability_cols = c(
-                                             "level_seeing_disability",
-                                             "level_hearing_disability",
-                                             "level_selfcare_disability",
-                                             "level_remembering_disability",
-                                             "level_walking_disability",
-                                             "level_communicating_disability"
-                                           )) {
+                                        disability_cols = c(
+                                          "level_seeing_disability",
+                                          "level_hearing_disability",
+                                          "level_selfcare_disability",
+                                          "level_remembering_disability",
+                                          "level_walking_disability",
+                                          "level_communicating_disability"
+                                        )) {
   
   # extract target columns to safely check row conditions
   subset_matrix <- data %>% 
@@ -4675,23 +4673,15 @@ calculate_disability_counts <- function(data,
     stringr::str_to_lower(base::as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
   })
   
-  # identify if an individual has any disability compressed to a binary 1 or 0
-  individual_any_disability <- dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
-  
-  # append individual metric, group by household, and use mutate to broadcast the sum
-  data %>%
-    dplyr::mutate(ind_disabled = individual_any_disability) %>%
-    dplyr::group_by(.data[[hh_id_col]]) %>%
-    dplyr::mutate(
-      total_disabled_in_hh = base::sum(ind_disabled, na.rm = TRUE)
-    ) %>%
-    dplyr::ungroup() %>%
-    # drop the temporary individual binary indicator column to keep output clean
-    dplyr::select(-ind_disabled)
+  # collapse individual domains down to a single binary indicator per row
+  dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
 }
+
 ```
 
-## hh disability counts
+## hh disability burden  counts
+
+counts multiple forms of disability among household members.
 
 ```{r function-calculate_hh_disability_counts}
 #' calculate the total number of disabled individuals at the household level
