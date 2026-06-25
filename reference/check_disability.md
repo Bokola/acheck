@@ -44,7 +44,7 @@ main_df <- data.frame(
 
 # create dummy repeat group dataset
 repeat_df <- data.frame(
-  `_uuid` = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),
+  `uuid` = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),
   HHM_disability = c("yes", "no", "yes", "yes", "no"),
   prot_disability_ind_age = c(1, 35, 2, 1, 40),
   stringsAsFactors = FALSE,
