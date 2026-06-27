@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_summary_table.R
 \name{create_summary_table}
 \alias{create_summary_table}
-\title{create a \code{gtsummary} table}
+\title{create a \code{gtsummary} table with optional top n category filtering}
 \usage{
 create_summary_table(
   data,
@@ -15,7 +15,10 @@ create_summary_table(
   report_median = FALSE,
   label_characteristic = "Characteristic",
   round_continuous = FALSE,
-  numeric_summary_type = c("mean", "sum")
+  numeric_summary_type = c("mean", "sum"),
+  calc_top_n = FALSE,
+  top_n = 4,
+  drop_na = TRUE
 )
 }
 \arguments{
@@ -40,10 +43,16 @@ create_summary_table(
 \item{round_continuous}{logical. whether to round continuous summaries to whole numbers instead of decimals}
 
 \item{numeric_summary_type}{character. summary format for numeric columns, either "mean" or "sum"}
+
+\item{calc_top_n}{logical. whether to filter categorical levels to only the top n most frequent values. defaults to FALSE}
+
+\item{top_n}{integer. number of highest frequency categories to retain if calc_top_n is TRUE. defaults to 4}
+
+\item{drop_na}{logical. whether to remove missing values from categorical columns. defaults to TRUE}
 }
 \value{
 a gtsummary object that renders across all formats natively
 }
 \description{
-create a \code{gtsummary} table
+create a \code{gtsummary} table with optional top n category filtering
 }
