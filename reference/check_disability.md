@@ -6,7 +6,13 @@ ages
 ## Usage
 
 ``` r
-check_disability(df_out, df_disab, uuid_col = "uuid", age = 6)
+check_disability(
+  df_out,
+  df_disab,
+  disab_col = "HHM_disability",
+  uuid_col = "uuid",
+  age = 6
+)
 ```
 
 ## Arguments
@@ -18,6 +24,11 @@ check_disability(df_out, df_disab, uuid_col = "uuid", age = 6)
 - df_disab:
 
   dataframe containing the individual repeat group data
+
+- disab_col:
+
+  character matching pattern for the disability column. defaults to
+  "HHM_disability"
 
 - uuid_col:
 
@@ -52,7 +63,7 @@ repeat_df <- data.frame(
 )
 
 # run the function
-output_df <- check_disability(main_df, repeat_df, uuid_col = "uuid")
+output_df <- check_disability(main_df, repeat_df, disab_col = "HHM_disability", uuid_col = "uuid")
 #> --- disability check summary ---
 #> households with active disability loops: 2
 #> households where all disabled members are < 6 (total: 2)

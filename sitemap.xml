@@ -15,6 +15,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/calculate_disability_counts.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/calculate_hh_disability_counts.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_disability.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/check_disability_single.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/check_esr_registrations.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/choices.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/clean_camp.html</loc></url>
@@ -63,6 +64,7 @@
 <url><loc>https://bokola.github.io/acheck/reference/parse_hhsize.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/patchwork_grid.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/pipe.html</loc></url>
+<url><loc>https://bokola.github.io/acheck/reference/plot_age_gender.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/plot_bar.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/plot_bar_top_n.html</loc></url>
 <url><loc>https://bokola.github.io/acheck/reference/plot_faceted_donuts.html</loc></url>

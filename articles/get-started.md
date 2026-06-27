@@ -53,6 +53,8 @@ library(acheck)
 
 ### plot bar top n
 
+### plot age/gender distribution
+
 ### patchwork grid plots
 
 ### add custom total
@@ -120,6 +122,8 @@ library(acheck)
 ### household count plot interactive
 
 ### get partner beneficiaries
+
+### check no disability for ages \< 6 years
 
 ### calculate disability counts
 

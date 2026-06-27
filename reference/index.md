@@ -25,6 +25,10 @@
   : validate and recode household disability flags based on repeat group
   ages
 
+- [`check_disability_single()`](https://bokola.github.io/acheck/reference/check_disability_single.md)
+  : validate and recode household disability flags based on repeat group
+  ages in a single dataset
+
 - [`check_esr_registrations()`](https://bokola.github.io/acheck/reference/check_esr_registrations.md)
   : Title
 
@@ -179,6 +183,9 @@
 - [`patchwork_grid()`](https://bokola.github.io/acheck/reference/patchwork_grid.md)
   : patchwork a list of plots with headers for sections arranged left to
   right with unified axes labels
+
+- [`plot_age_gender()`](https://bokola.github.io/acheck/reference/plot_age_gender.md)
+  : plot age distribution faceted by gender using patchwork
 
 - [`plot_bar()`](https://bokola.github.io/acheck/reference/plot_bar.md)
   : plot bar graphs with automatic summary calculations
