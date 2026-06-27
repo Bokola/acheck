@@ -21,6 +21,9 @@
   : calculate the total number of disabled individuals at the household
   level
 
+- [`calculate_hunger_score()`](https://bokola.github.io/acheck/reference/calculate_hunger_score.md)
+  : calculate household hunger score and categorical scale
+
 - [`check_disability()`](https://bokola.github.io/acheck/reference/check_disability.md)
   : validate and recode household disability flags based on repeat group
   ages
