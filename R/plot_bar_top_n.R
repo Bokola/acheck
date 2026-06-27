@@ -15,7 +15,7 @@
 #' @importFrom rlang ensym as_label
 #' @importFrom tidyr separate_rows
 #' @importFrom dplyr filter group_by summarize mutate slice_max ungroup desc
-#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous scale_x_discrete expansion theme_minimal theme element_blank element_text
+#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous scale_x_continuous expansion theme_minimal theme element_blank element_text
 #' @importFrom scales percent comma
 #' @importFrom forcats fct_reorder
 #'
@@ -39,11 +39,6 @@ plot_bar_top_n <- function(data,
   x_sym <- rlang::ensym(x_var)
   x_char <- rlang::as_label(x_sym)
   
-  # auto expand multiple response space separated text strings if present
-  # if (is.character(data[[x_char]])) {
-  #   data <- data %>% tidyr::separate_rows(!!x_sym, sep = " ")
-  # }
-  # 
   # drop missing values from the grouping variable
   data <- data %>% dplyr::filter(!is.na(!!x_sym))
   
@@ -65,25 +60,11 @@ plot_bar_top_n <- function(data,
         dplyr::summarize(metric = round(mean(!!y_sym, na.rm = TRUE)), .groups = "drop") %>%
         dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
       
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
-      
     } else if (type == "proportion") {
       summary_df <- data %>%
         dplyr::group_by(!!x_sym) %>%
         dplyr::summarize(metric = mean(!!y_sym == 1, na.rm = TRUE), .groups = "drop") %>%
         dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
-      
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
       
     } else if (type == "count") {
       summary_df <- data %>%
@@ -91,37 +72,51 @@ plot_bar_top_n <- function(data,
         dplyr::summarize(metric = sum(!!y_sym, na.rm = TRUE), .groups = "drop") %>%
         dplyr::mutate(pct = metric / sum(metric, na.rm = TRUE)) %>%
         dplyr::slice_max(order_by = metric, n = n_top, with_ties = FALSE)
-      
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(metric)), y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
     }
     
   } else {
-    # case when no y variable is supplied (calculating straight counts/proportions of rows)
     summary_df <- data %>%
       dplyr::count(!!x_sym) %>%
       dplyr::mutate(pct = n / sum(n)) %>%
       dplyr::slice_max(order_by = n, n = n_top, with_ties = FALSE)
     
-    if (type == "proportion") {
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(pct)), y = pct)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
-    } else {
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = forcats::fct_reorder(!!x_sym, dplyr::desc(n)), y = n)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = paste0(scales::comma(n), " (", scales::percent(pct, accuracy = 0.1), ")")),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
-    }
+    summary_df$metric <- if (type == "proportion") summary_df$pct else summary_df$n
+  }
+  
+  # arrange tracking rows to compute dynamic level ordering indices safely
+  # lower case comments without dots
+  if (type == "proportion" && is.null(y_var)) {
+    summary_df <- summary_df %>% dplyr::arrange(dplyr::desc(pct))
+  } else if (is.null(y_var)) {
+    summary_df <- summary_df %>% dplyr::arrange(dplyr::desc(n))
+  } else {
+    summary_df <- summary_df %>% dplyr::arrange(dplyr::desc(metric))
+  }
+  
+  # map character labels to fixed sequential index positions
+  x_labels <- as.character(summary_df[[x_char]])
+  summary_df$plot_x_numeric <- 1:nrow(summary_df)
+  
+  # construct the base visualization matrix with narrow bar constraints
+  p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = plot_x_numeric, y = metric)) +
+    ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.225)
+  
+  # bind text configurations based on functional metric assignments
+  if (type == "proportion") {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
+  } else if (type == "mean") {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
+  } else {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
   }
   
   # chart polishing and design options
@@ -131,6 +126,11 @@ plot_bar_top_n <- function(data,
       subtitle = subtitle,
       x = if(is.null(x_lab)) x_char else x_lab,
       y = y_lab
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = 1:length(x_labels),
+      labels = x_labels,
+      limits = c(0.5, length(x_labels) + 0.5)
     ) +
     ggplot2::scale_y_continuous(labels = scales::comma, expand = ggplot2::expansion(mult = c(0, 0.2))) +
     ggplot2::theme_minimal(base_size = 12) +

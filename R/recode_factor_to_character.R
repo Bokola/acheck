@@ -18,7 +18,7 @@ recode_factor_to_character <- function(x) {
       ~ .x %>%
         as_factor() %>%
         forcats::fct_drop() %>%
-        base::as.character()
+        as.character()
     )
   )
   

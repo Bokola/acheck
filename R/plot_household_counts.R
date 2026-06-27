@@ -32,10 +32,10 @@ plot_household_counts <- function(data, lat_col, lon_col, group_by = "ward", com
   )
   
   # dynamically download the official boundaries from gadm database
-  kenya_spatvector_l1 <- geodata::gadm(country = "KEN", level = 1, path = base::tempdir())
+  kenya_spatvector_l1 <- geodata::gadm(country = "KEN", level = 1, path = tempdir())
   kenya_counties_sf <- sf::st_as_sf(kenya_spatvector_l1)
   
-  kenya_spatvector_l3 <- geodata::gadm(country = "KEN", level = 3, path = base::tempdir())
+  kenya_spatvector_l3 <- geodata::gadm(country = "KEN", level = 3, path = tempdir())
   kenya_wards_sf <- sf::st_as_sf(kenya_spatvector_l3)
   
   # aggregate counts and build mathematical bold display labels based on chosen administrative group scale
@@ -53,7 +53,7 @@ plot_household_counts <- function(data, lat_col, lon_col, group_by = "ward", com
     annotated_sf <- kenya_wards_sf %>%
       dplyr::left_join(counts_df, by = "GID_3") %>%
       dplyr::filter(!is.na(hh_count)) %>%
-      dplyr::mutate(display_label = base::paste0("atop(bold('", NAME_3, "'), '(N = ", hh_count, ")')"))
+      dplyr::mutate(display_label = paste0("atop(bold('", NAME_3, "'), '(N = ", hh_count, ")')"))
     
   } else if (group_by == "county") {
     # spatially join household coordinates to identify active county parents
@@ -69,13 +69,13 @@ plot_household_counts <- function(data, lat_col, lon_col, group_by = "ward", com
     annotated_sf <- kenya_counties_sf %>%
       dplyr::left_join(counts_df, by = "GID_1") %>%
       dplyr::filter(!is.na(hh_count)) %>%
-      dplyr::mutate(display_label = base::paste0("atop(bold('", NAME_1, "'), '(N = ", hh_count, ")')"))
+      dplyr::mutate(display_label = paste0("atop(bold('", NAME_1, "'), '(N = ", hh_count, ")')"))
   } else {
-    base::stop("invalid group_by selection, please configure as either 'ward' or 'county'")
+    stop("invalid group_by selection, please configure as either 'ward' or 'county'")
   }
   
   # extract geographic interior centroids calculated from the largest continuous landmass polygon space
-  label_points <- base::suppressWarnings(sf::st_centroid(annotated_sf, of_largest_polygon = TRUE))
+  label_points <- suppressWarnings(sf::st_centroid(annotated_sf, of_largest_polygon = TRUE))
   label_coords <- sf::st_coordinates(label_points)
   
   annotated_sf$label_lon <- label_coords[, 1]

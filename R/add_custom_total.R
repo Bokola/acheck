@@ -15,7 +15,7 @@ add_custom_total <- function(df) {
     dplyr::summarise(
       Village = "Total",
       # only sum unique targeted values per village to avoid double counting
-      `Targeted BNF` = base::sum(unique(`Targeted BNF`), na.rm = TRUE),
+      `Targeted BNF` = sum(unique(`Targeted BNF`), na.rm = TRUE),
       `Registered BNF` = sum(`Registered BNF`, na.rm = TRUE),
       Variance = sum(Variance, na.rm = TRUE),
       `ESR Households` = sum(`ESR Households`, na.rm = TRUE),

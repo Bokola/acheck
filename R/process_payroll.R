@@ -9,7 +9,7 @@
 #'
 process_payroll <- function(x) {
   # find columns matching pattern to pass safely to standard selectors
-  drop_cols <- base::grep("^x", base::names(x), ignore.case = TRUE, value = TRUE)
+  drop_cols <- grep("^x", names(x), ignore.case = TRUE, value = TRUE)
   
   # target accounting columns requiring explicit type casting
   numeric_targets <- c(
@@ -24,18 +24,18 @@ process_payroll <- function(x) {
     dplyr::select(-dplyr::any_of(drop_cols)) %>%
     
     # defensive filter check: if "no" exists, filters out NAs; if missing, lets all rows pass
-    dplyr::filter(dplyr::if_any(dplyr::any_of("no"), ~ !base::is.na(.x)) | !("no" %in% base::names(.))) %>%
+    dplyr::filter(dplyr::if_any(dplyr::any_of("no"), ~ !is.na(.x)) | !("no" %in% names(.))) %>%
     
     # defensive mutate check: targets telephone_number safely using any_of
     dplyr::mutate(
       # dplyr::across(
       #   dplyr::any_of("telephone_number"),
-      #   ~ base::gsub("^254", "0", base::as.character(.x))
+      #   ~ gsub("^254", "0", as.character(.x))
       # ),
       # defensive numeric conversion check: loops through specified financial column keys if present
       dplyr::across(
         dplyr::any_of(numeric_targets),
-        ~ base::as.numeric(.x)
+        ~ as.numeric(.x)
       )
     ) %>%
     mutate(

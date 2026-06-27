@@ -24,10 +24,10 @@ recode_early_childhood_disability <- function(data,
         dplyr::all_of(disability_cols),
         ~ dplyr::if_else(
           # check if age exists and falls below the 6 year target threshold
-          !base::is.na(.data[[age_col]]) & .data[[age_col]] < 6,
+          !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
           "No difficulty",
           # preserve the original cell contents if criteria are not met
-          base::as.character(.x)
+          as.character(.x)
         )
       )
     )

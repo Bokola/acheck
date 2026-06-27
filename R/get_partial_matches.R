@@ -76,9 +76,9 @@ get_partial_matches_extend <- function(df1, df2, focal = "focal_name", beneficia
   benef_vec <- df2_clean[[beneficiary]]
   
   # build a row-by-row logical evaluation matrix for all combinations
-  match_grid <- base::expand.grid(
-    row_df1 = base::seq_along(focal_vec),
-    row_df2 = base::seq_along(benef_vec)
+  match_grid <- expand.grid(
+    row_df1 = seq_along(focal_vec),
+    row_df2 = seq_along(benef_vec)
   )
   
   # map across combinations using vector indexes rather than data frame strings
@@ -87,27 +87,27 @@ get_partial_matches_extend <- function(df1, df2, focal = "focal_name", beneficia
     b_raw <- benef_vec[.y]
     
     # early exit check for missing values or empty strings
-    if (base::is.na(f_raw) || base::is.na(b_raw) || f_raw == "" || b_raw == "" || f_raw == "NA" || b_raw == "NA") {
+    if (is.na(f_raw) || is.na(b_raw) || f_raw == "" || b_raw == "" || f_raw == "NA" || b_raw == "NA") {
       FALSE
     } else {
-      f_str <- base::as.character(f_raw)
-      b_str <- base::as.character(b_raw)
+      f_str <- as.character(f_raw)
+      b_str <- as.character(b_raw)
       
       # basic substring check first using base r grepl to avoid vector length bugs
-      matched <- base::grepl(b_str, f_str, fixed = TRUE) || base::grepl(f_str, b_str, fixed = TRUE)
+      matched <- grepl(b_str, f_str, fixed = TRUE) || grepl(f_str, b_str, fixed = TRUE)
       
-      if (base::isTRUE(matched)) {
+      if (isTRUE(matched)) {
         matched
       } else {
         # clean and split both strings into unique words
-        f_words <- base::unique(base::unlist(stringr::str_split(f_str, "\\s+")))
-        b_words <- base::unique(base::unlist(stringr::str_split(b_str, "\\s+")))
+        f_words <- unique(unlist(stringr::str_split(f_str, "\\s+")))
+        b_words <- unique(unlist(stringr::str_split(b_str, "\\s+")))
         
         # calculate intersect count of matching string tokens across both word arrays
-        shared_tokens <- base::intersect(f_words, b_words)
+        shared_tokens <- intersect(f_words, b_words)
         
         # enforce condition tracking threshold counts to capture out of order permutations
-        base::length(shared_tokens) >= min_shared_words
+        length(shared_tokens) >= min_shared_words
       }
     }
   })

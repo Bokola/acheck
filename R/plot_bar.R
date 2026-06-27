@@ -13,7 +13,7 @@
 #' @param y_lab character vector of label for y-axis
 #' @importFrom rlang ensym as_label
 #' @importFrom dplyr filter group_by summarize mutate ungroup
-#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous expansion theme_minimal theme element_blank element_text
+#' @importFrom ggplot2 ggplot aes geom_col geom_text labs scale_y_continuous scale_x_continuous expansion theme_minimal theme element_blank element_text
 #' @importFrom scales percent comma
 #'
 #' @returns a ggplot object
@@ -35,7 +35,7 @@ plot_bar <- function(data,
   x_sym <- rlang::ensym(x_var)
   x_char <- rlang::as_label(x_sym)
   
-  # drop missing values from the grouping variable
+  # drop missing values from the grouping variable upfront
   data <- data %>% dplyr::filter(!is.na(!!x_sym))
   
   # standardizing labels based on the calculation metric
@@ -53,14 +53,8 @@ plot_bar <- function(data,
     if (type == "mean") {
       summary_df <- data %>%
         dplyr::group_by(!!x_sym) %>%
-        dplyr::summarize(metric = round(mean(!!y_sym, na.rm = TRUE)), .groups = "drop")
-      
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
+        dplyr::summarize(metric = round(mean(!!y_sym, na.rm = TRUE)), .groups = "drop") %>%
+        dplyr::filter(!is.na(metric))
       
     } else if (type == "proportion") {
       summary_df <- data %>%
@@ -72,50 +66,54 @@ plot_bar <- function(data,
             mean(!is.na(!!y_sym), na.rm = TRUE)
           }, 
           .groups = "drop"
-        )
-      
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
+        ) %>%
+        dplyr::filter(!is.na(metric))
       
     } else if (type == "count") {
       summary_df <- data %>%
         dplyr::group_by(!!x_sym) %>%
         dplyr::summarize(metric = sum(!!y_sym, na.rm = TRUE), .groups = "drop") %>%
-        dplyr::mutate(pct = metric / sum(metric, na.rm = TRUE))
-      
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = metric)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
+        dplyr::mutate(pct = metric / sum(metric, na.rm = TRUE)) %>%
+        dplyr::filter(!is.na(metric))
     }
     
   } else {
-    # case when no y variable is supplied (calculating straight counts/proportions of rows)
     summary_df <- data %>%
       dplyr::count(!!x_sym) %>%
       dplyr::mutate(pct = n / sum(n))
     
-    if (type == "proportion") {
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = pct)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = scales::percent(pct, accuracy = 0.1)),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
-    } else {
-      p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = !!x_sym, y = n)) +
-        ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.75) +
-        ggplot2::geom_text(
-          ggplot2::aes(label = paste0(scales::comma(n), " (", scales::percent(pct, accuracy = 0.1), ")")),
-          vjust = -0.5, size = 3, fontface = "bold"
-        )
-    }
+    # standardize name column for plotting step below
+    summary_df$metric <- if (type == "proportion") summary_df$pct else summary_df$n
+  }
+  
+  # force x to a standard factor to catch clean label text representations
+  # lower case comments without dots
+  summary_df$plot_x_factor <- as.factor(summary_df[[x_char]])
+  x_labels <- levels(summary_df$plot_x_factor)
+  
+  # map numeric vectors to prevent single category blowout stretching
+  summary_df$plot_x_numeric <- as.numeric(summary_df$plot_x_factor)
+  
+  # compile base plot with fixed coordinate controls and width reduced by another quarter
+  p <- ggplot2::ggplot(summary_df, ggplot2::aes(x = plot_x_numeric, y = metric)) +
+    ggplot2::geom_col(fill = fill_col, alpha = 0.9, width = 0.225)
+  
+  # apply text label geometry based on metric configuration
+  if (type == "proportion" || (is.null(y_var) && type == "proportion")) {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = scales::percent(metric, accuracy = 0.1)),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
+  } else if (type == "mean") {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = scales::comma(metric, accuracy = 0.01)),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
+  } else {
+    p <- p + ggplot2::geom_text(
+      ggplot2::aes(label = paste0(scales::comma(metric), " (", scales::percent(pct, accuracy = 0.1), ")")),
+      vjust = -0.5, size = 3, fontface = "bold"
+    )
   }
   
   # chart polishing and design options
@@ -125,6 +123,11 @@ plot_bar <- function(data,
       subtitle = subtitle,
       x = if(is.null(x_lab)) x_char else x_lab,
       y = y_lab
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = 1:length(x_labels),
+      labels = x_labels,
+      limits = c(0.5, length(x_labels) + 0.5)
     ) +
     ggplot2::scale_y_continuous(labels = scales::comma, expand = ggplot2::expansion(mult = c(0, 0.2))) +
     ggplot2::theme_minimal(base_size = 12) +

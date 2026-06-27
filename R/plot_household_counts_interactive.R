@@ -29,16 +29,16 @@ plot_household_counts_interactive <- function(data, lat_col, lon_col, group_by =
   )
   
   # dynamically download the official boundaries from gadm database
-  kenya_spatvector_l1 <- geodata::gadm(country = "KEN", level = 1, path = base::tempdir())
+  kenya_spatvector_l1 <- geodata::gadm(country = "KEN", level = 1, path = tempdir())
   kenya_counties_sf <- sf::st_as_sf(kenya_spatvector_l1)
   
-  kenya_spatvector_l3 <- geodata::gadm(country = "KEN", level = 3, path = base::tempdir())
+  kenya_spatvector_l3 <- geodata::gadm(country = "KEN", level = 3, path = tempdir())
   kenya_wards_sf <- sf::st_as_sf(kenya_spatvector_l3)
   
   # aggregate counts and map tracking labels based on chosen administrative group scale
   if (group_by == "ward") {
     # spatially join household coordinates to identify active ward parents
-    sf_joined <- base::suppressMessages(sf::st_join(sf_df, kenya_wards_sf, join = sf::st_intersects))
+    sf_joined <- suppressMessages(sf::st_join(sf_df, kenya_wards_sf, join = sf::st_intersects))
     
     # generate frequencies matching unique gadm layer identifiers and drop point geometry structures safely
     counts_df <- sf_joined %>%
@@ -51,12 +51,12 @@ plot_household_counts_interactive <- function(data, lat_col, lon_col, group_by =
       dplyr::left_join(counts_df, by = "GID_3") %>%
       dplyr::filter(!is.na(hh_count)) %>%
       dplyr::mutate(
-        hover_label = base::paste0("<strong>Ward:</strong> ", NAME_3, "<br><strong>Households:</strong> ", hh_count)
+        hover_label = paste0("<strong>Ward:</strong> ", NAME_3, "<br><strong>Households:</strong> ", hh_count)
       )
     
   } else if (group_by == "county") {
     # spatially join household coordinates to identify active county parents
-    sf_joined <- base::suppressMessages(sf::st_join(sf_df, kenya_counties_sf, join = sf::st_intersects))
+    sf_joined <- suppressMessages(sf::st_join(sf_df, kenya_counties_sf, join = sf::st_intersects))
     
     # generate frequencies matching unique gadm layer identifiers and drop point geometry structures safely
     counts_df <- sf_joined %>%
@@ -69,14 +69,14 @@ plot_household_counts_interactive <- function(data, lat_col, lon_col, group_by =
       dplyr::left_join(counts_df, by = "GID_1") %>%
       dplyr::filter(!is.na(hh_count)) %>%
       dplyr::mutate(
-        hover_label = base::paste0("<strong>County:</strong> ", NAME_1, "<br><strong>Households:</strong> ", hh_count)
+        hover_label = paste0("<strong>County:</strong> ", NAME_1, "<br><strong>Households:</strong> ", hh_count)
       )
   } else {
-    base::stop("invalid group_by selection, please configure as either 'ward' or 'county'")
+    stop("invalid group_by selection, please configure as either 'ward' or 'county'")
   }
   
   # extract spatial surface coordinates guaranteed to be mathematically inside the polygon boundaries
-  label_points <- base::suppressWarnings(sf::st_point_on_surface(annotated_sf))
+  label_points <- suppressWarnings(sf::st_point_on_surface(annotated_sf))
   label_coords <- sf::st_coordinates(label_points)
   
   annotated_sf$label_lon <- label_coords[, 1]
@@ -127,9 +127,9 @@ plot_household_counts_interactive <- function(data, lat_col, lon_col, group_by =
       data = annotated_sf,
       lng = ~label_lon,
       lat = ~label_lat,
-      label = ~base::lapply(hover_label, htmltools::HTML),
+      label = ~lapply(hover_label, htmltools::HTML),
       labelOptions = leaflet::labelOptions(
-        style = base::list(
+        style = list(
           "font-family" = "sans-serif",
           "font-size" = "12px",
           "color" = "#722F37",

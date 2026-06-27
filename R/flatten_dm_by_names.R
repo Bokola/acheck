@@ -8,10 +8,10 @@
 #' @export
 flatten_dm_by_names <- function(dm_obj) {
   # extract the structural table names directly from the dm object
-  tbl_names <- base::names(dm_obj)
+  tbl_names <- names(dm_obj)
   
   # loop through the valid names to flatten each table
-  df_list <- base::lapply(tbl_names, function(name) {
+  df_list <- lapply(tbl_names, function(name) {
     dm::dm_flatten_to_tbl(dm_obj, !!name)
   })
   

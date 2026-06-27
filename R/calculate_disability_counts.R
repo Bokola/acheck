@@ -23,11 +23,10 @@ calculate_disability_counts <- function(data,
   
   # match case-insensitively against the exact literal strings provided
   # lower case comments without dots
-  match_matrix <- base::apply(subset_matrix, 2, function(col) {
-    stringr::str_to_lower(base::as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
+  match_matrix <- apply(subset_matrix, 2, function(col) {
+    stringr::str_to_lower(as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
   })
   
   # collapse individual domains down to a single binary indicator per row
-  dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
+  dplyr::if_else(rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
 }
-

@@ -15,13 +15,13 @@ clean_phone_number <- function(x, col = c("reg_num", "telephone_number", "proxy_
         dplyr::any_of(col),
         ~ {
           # convert elements to character format to guarantee stable evaluation
-          char_vec <- base::as.character(.x)
+          char_vec <- as.character(.x)
           
           dplyr::case_when(
             # match format missing a leading country code or standard zero index
-            base::nchar(char_vec) == 9  ~ base::paste0("254", char_vec),
+            nchar(char_vec) == 9  ~ paste0("254", char_vec),
             # match format structured with a leading single local digit zero index
-            base::nchar(char_vec) == 10 ~ base::gsub("^0", "254", char_vec),
+            nchar(char_vec) == 10 ~ gsub("^0", "254", char_vec),
             # fall back and preserve raw entries unchanged if lengths do not match
             TRUE ~ char_vec
           )

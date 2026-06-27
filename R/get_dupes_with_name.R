@@ -21,8 +21,8 @@ get_dupes_with_name <- function(
   col_syms <- rlang::ensyms(col)
   
   # convert the captured symbols into character strings for label grouping
-  col_strings <- base::as.character(col_syms)
-  combined_label <- base::paste(col_strings, collapse = ", ")
+  col_strings <- as.character(col_syms)
+  combined_label <- paste(col_strings, collapse = ", ")
   
   # run the janitor deduplication filter across all target symbols and append the tracking string
   processed_df <- data %>%
@@ -30,7 +30,7 @@ get_dupes_with_name <- function(
     dplyr::mutate(dup_col = combined_label)
   
   # inject and combine the checked column symbols directly into the selection expression list
-  final_select_exprs <- base::unique(c(col_syms, cols_select))
+  final_select_exprs <- unique(c(col_syms, cols_select))
   
   # evaluate the complete unified selection expression list dynamically
   result <- processed_df %>%

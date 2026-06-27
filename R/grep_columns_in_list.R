@@ -11,20 +11,20 @@
 grep_columns_in_list <- function(df_list, pattern, ignore_case = TRUE) {
   
   # verify the incoming object is structurally a list format
-  if (!base::is.list(df_list)) {
-    base::stop("the input df_list must be a valid list object")
+  if (!is.list(df_list)) {
+    stop("the input df_list must be a valid list object")
   }
   
   # ensure all list elements have tracking names assigned
-  if (base::is.null(base::names(df_list))) {
-    base::names(df_list) <- base::paste0("df_", base::seq_along(df_list))
+  if (is.null(names(df_list))) {
+    names(df_list) <- paste0("df_", seq_along(df_list))
   }
   
   # map across the list to extract matching column labels
   matched_results <- purrr::map(df_list, function(df) {
     
     # pull all column elements present in the data frame boundary matrix
-    all_cols <- base::names(df)
+    all_cols <- names(df)
     
     # run regular expression filter against the column metadata layer
     matching_cols <- stringr::str_subset(
@@ -33,7 +33,7 @@ grep_columns_in_list <- function(df_list, pattern, ignore_case = TRUE) {
     )
     
     # return the matches if found, otherwise return null
-    if (base::length(matching_cols) > 0) {
+    if (length(matching_cols) > 0) {
       return(matching_cols)
     } else {
       return(NULL)

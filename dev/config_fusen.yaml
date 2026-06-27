@@ -25,6 +25,7 @@ flat_full.Rmd:
   - R/get_distinct.R
   - R/plot_bar.R
   - R/plot_bar_top_n.R
+  - R/plot_age_gender.R
   - R/patchwork_grid.R
   - R/add_custom_total.R
   - R/collapse_villages.R
@@ -59,6 +60,7 @@ flat_full.Rmd:
   - R/plot_household_counts.R
   - R/plot_household_counts_interactive.R
   - R/get_partner_beneficiaries.R
+  - R/check_disability_single.R
   - R/calculate_disability_counts.R
   - R/calculate_hh_disability_counts.R
   - R/recode_early_childhood_disability.R

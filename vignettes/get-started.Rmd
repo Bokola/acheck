@@ -148,6 +148,9 @@ After inflating the template
 
 ## plot bar top n
 
+## plot age/gender distribution
+
+
 
 ## patchwork grid plots
 
@@ -238,6 +241,8 @@ After inflating the template
 ## household count plot interactive
 
 ## get partner beneficiaries
+
+## check no disability for ages < 6 years
 
 
 

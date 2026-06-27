@@ -25,18 +25,18 @@ calculate_hh_disability_counts <- function(data,
   
   # match case-insensitively against the exact literal choices provided
   # lower case comments without dots
-  match_matrix <- base::apply(subset_matrix, 2, function(col) {
-    stringr::str_to_lower(base::as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
+  match_matrix <- apply(subset_matrix, 2, function(col) {
+    stringr::str_to_lower(as.character(col)) %in% c("some difficulty", "a lot of difficulty", "cannot do at all")
   })
   
   # collapse individual domains down to a single binary indicator per row
-  ind_disabled <- dplyr::if_else(base::rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
+  ind_disabled <- dplyr::if_else(rowSums(match_matrix, na.rm = TRUE) > 0, 1L, 0L)
   
   # create a temporary tracking block to calculate the broadcasted household sums safely
   result_vector <- data %>%
     dplyr::mutate(temp_ind_disabled = ind_disabled) %>%
     dplyr::group_by(.data[[hh_id_col]]) %>%
-    dplyr::mutate(total_disabled_in_hh = base::sum(temp_ind_disabled, na.rm = TRUE)) %>%
+    dplyr::mutate(total_disabled_in_hh = sum(temp_ind_disabled, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     dplyr::pull(total_disabled_in_hh)
   

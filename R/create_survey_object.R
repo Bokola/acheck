@@ -17,22 +17,22 @@ create_survey_object <- function(sample_df,
                                         weight_col_name = "sampling_weight") {
   
   # ensure package namespace dependencies are available
-  if (!base::requireNamespace("survey", quietly = TRUE)) {
-    base::stop("the 'survey' package is required but not installed")
+  if (!requireNamespace("survey", quietly = TRUE)) {
+    stop("the 'survey' package is required but not installed")
   }
   
   # handle missing variable safety up front
-  all_vars <- base::unique(c(id_cols, strata_cols))
-  missing_sample <- all_vars[!all_vars %in% base::names(sample_df)]
-  missing_pop    <- all_vars[!all_vars %in% base::names(population_df)]
+  all_vars <- unique(c(id_cols, strata_cols))
+  missing_sample <- all_vars[!all_vars %in% names(sample_df)]
+  missing_pop    <- all_vars[!all_vars %in% names(population_df)]
   
-  if (base::length(missing_sample) > 0 || base::length(missing_pop) > 0) {
-    base::stop("specified structural columns missing from sample or population dataframes")
+  if (length(missing_sample) > 0 || length(missing_pop) > 0) {
+    stop("specified structural columns missing from sample or population dataframes")
   }
   
   # step 1: isolate stage 1 units (primary sampling units) to evaluate selection probabilities
   psu_col <- id_cols[1]
-  stage1_grouping <- base::unique(c(strata_cols, psu_col))
+  stage1_grouping <- unique(c(strata_cols, psu_col))
   
   pop_psus <- population_df %>%
     dplyr::distinct(dplyr::across(dplyr::all_of(stage1_grouping))) %>%
@@ -49,15 +49,15 @@ create_survey_object <- function(sample_df,
     dplyr::left_join(sample_psus, by = strata_cols) %>%
     # if unstratified, handle empty grouping count variables safely
     dplyr::mutate(
-      ..total_PSUs_in_strata..   = base::ifelse(base::is.na(..total_PSUs_in_strata..), base::length(base::unique(population_df[[psu_col]])), ..total_PSUs_in_strata..),
-      ..sampled_PSUs_in_strata.. = base::ifelse(base::is.na(..sampled_PSUs_in_strata..), base::length(base::unique(sample_df[[psu_col]])), ..sampled_PSUs_in_strata..),
+      ..total_PSUs_in_strata..   = ifelse(is.na(..total_PSUs_in_strata..), length(unique(population_df[[psu_col]])), ..total_PSUs_in_strata..),
+      ..sampled_PSUs_in_strata.. = ifelse(is.na(..sampled_PSUs_in_strata..), length(unique(sample_df[[psu_col]])), ..sampled_PSUs_in_strata..),
       ..prob_stage1..            = ..sampled_PSUs_in_strata.. / ..total_PSUs_in_strata..
     ) %>%
     dplyr::select(dplyr::all_of(stage1_grouping), "..prob_stage1..")
   
   # step 2: evaluate stage 2 units (secondary sampling units) if a second id column is specified
-  if (base::length(id_cols) > 1) {
-    ssu_grouping <- base::unique(c(strata_cols, id_cols[1:2]))
+  if (length(id_cols) > 1) {
+    ssu_grouping <- unique(c(strata_cols, id_cols[1:2]))
     
     pop_ssus <- population_df %>%
       dplyr::count(dplyr::across(dplyr::all_of(id_cols[1])), name = "..total_SSUs_in_PSU..")
@@ -68,7 +68,7 @@ create_survey_object <- function(sample_df,
     stage2_probs <- pop_ssus %>%
       dplyr::left_join(sample_ssus, by = id_cols[1]) %>%
       dplyr::mutate(
-        ..sampled_SSUs_in_PSU.. = base::ifelse(base::is.na(..sampled_SSUs_in_PSU..), 0, ..sampled_SSUs_in_PSU..),
+        ..sampled_SSUs_in_PSU.. = ifelse(is.na(..sampled_SSUs_in_PSU..), 0, ..sampled_SSUs_in_PSU..),
         ..prob_stage2..         = ..sampled_SSUs_in_PSU.. / ..total_SSUs_in_PSU..
       ) %>%
       dplyr::select(dplyr::all_of(id_cols[1]), "..prob_stage2..")
@@ -94,9 +94,9 @@ create_survey_object <- function(sample_df,
   sample_with_weights <- sample_df %>%
     dplyr::inner_join(final_weights, by = id_cols[1])
   
-  id_formula     <- stats::as.formula(base::paste0("~", base::paste(id_cols, collapse = " + ")))
-  strata_formula <- if (!base::is.null(strata_cols)) stats::as.formula(base::paste0("~", base::paste(strata_cols, collapse = " + "))) else NULL
-  weight_formula <- stats::as.formula(base::paste0("~", weight_col_name))
+  id_formula     <- stats::as.formula(paste0("~", paste(id_cols, collapse = " + ")))
+  strata_formula <- if (!is.null(strata_cols)) stats::as.formula(paste0("~", paste(strata_cols, collapse = " + "))) else NULL
+  weight_formula <- stats::as.formula(paste0("~", weight_col_name))
   
   survey_obj <- survey::svydesign(
     ids = id_formula,
