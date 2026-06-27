@@ -1,6 +1,6 @@
-# create a `gtsummary` table
+# create a `gtsummary` table with optional top n category filtering
 
-create a `gtsummary` table
+create a `gtsummary` table with optional top n category filtering
 
 ## Usage
 
@@ -16,7 +16,10 @@ create_summary_table(
   report_median = FALSE,
   label_characteristic = "Characteristic",
   round_continuous = FALSE,
-  numeric_summary_type = c("mean", "sum")
+  numeric_summary_type = c("mean", "sum"),
+  calc_top_n = FALSE,
+  top_n = 4,
+  drop_na = TRUE
 )
 ```
 
@@ -67,6 +70,21 @@ create_summary_table(
 - numeric_summary_type:
 
   character. summary format for numeric columns, either "mean" or "sum"
+
+- calc_top_n:
+
+  logical. whether to filter categorical levels to only the top n most
+  frequent values. defaults to FALSE
+
+- top_n:
+
+  integer. number of highest frequency categories to retain if
+  calc_top_n is TRUE. defaults to 4
+
+- drop_na:
+
+  logical. whether to remove missing values from categorical columns.
+  defaults to TRUE
 
 ## Value
 

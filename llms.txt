@@ -464,7 +464,7 @@ Designed for **humanitarian data workflows**, **Kobo pipelines**,
 - [`create_summary_table()`](https://bokola.github.io/acheck/reference/create_summary_table.md)
   :
 
-  create a `gtsummary` table
+  create a `gtsummary` table with optional top n category filtering
 
 - [`create_survey_object()`](https://bokola.github.io/acheck/reference/create_survey_object.md)
   : create a survey design object dynamically for any complex sampling
