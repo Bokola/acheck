@@ -161,6 +161,9 @@
 - [`get_standard_villages()`](https://bokola.github.io/acheck/reference/get_standard_villages.md)
   : separate villages collapsed by forward slash ("\|")
 
+- [`get_top_n_levels()`](https://bokola.github.io/acheck/reference/get_top_n_levels.md)
+  : get a character vector of the top n levels of a categorical variable
+
 - [`get_vulnerability_data()`](https://bokola.github.io/acheck/reference/get_vulnerability_data.md)
   : get vulnerability criteria (physiological, nutritional etc)
 
