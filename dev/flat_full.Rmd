@@ -5537,6 +5537,54 @@ calculate_hunger_score <- function(data,
 }
 ```
 
+## get top n levels of a categorical column
+
+```{r function-get_top_n_levels}
+#' get a character vector of the top n levels of a categorical variable
+#'
+#' @param data dataframe
+#' @param cat_var character name or unquoted symbol of the categorical variable
+#' @param n integer maximum number of levels to return. defaults to 10
+#' @param drop_na logical indicate if missing values should be excluded. defaults to TRUE
+#'
+#' @returns a character vector of category names sorted in descending order
+#' @export
+#'
+#' @examples
+#' # lower case comments without dots or dashes
+#' survey_df <- data.frame(
+#'   subcounty = 
+#'   c("samburu_east", "samburu_east", "tana_river",
+#'    "samburu_north", "tana_river", "tana_river")
+#' )
+#' 
+#' top_levels <- get_top_n_levels(survey_df, subcounty, n = 2)
+get_top_n_levels <- function(data = df_income, cat_var = 'main_source_income' , n = 4, drop_na = TRUE) {
+  
+  # parse input using tidy evaluation
+  cat_sym <- rlang::ensym(cat_var)
+  cat_char <- rlang::as_label(cat_sym)
+  
+  # remove missing values if requested upfront
+  if (drop_na) {
+    data <- data %>% dplyr::filter(!is.na(!!cat_sym))
+  }
+  
+  # count frequencies and slice top n records
+  # lower case comments without dots
+  top_df <- data %>%
+    dplyr::count(!!cat_sym, name = "n") %>%
+    dplyr::slice_max(order_by = n, n = n, with_ties = FALSE) %>%
+    dplyr::arrange(dplyr::desc(n))
+  
+  # extract column values as a clean character vector
+  levels_vector <- base::as.character(top_df[[cat_char]])
+  
+  return(levels_vector)
+}
+```
+
+
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.
