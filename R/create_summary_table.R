@@ -41,7 +41,6 @@ create_summary_table <- function(data,
   build_summary <- function(df) {
     
     # isolate selected columns to find types and frequencies
-    # lower case comments without dots
     selected_vars <- df %>% dplyr::select({{cols}})
     
     # dynamically subset categories to top n if requested
@@ -115,17 +114,19 @@ create_summary_table <- function(data,
         ),
         digits = list(
           # lower case comments without dots or dashes
-          # dynamically switch style format if handling raw numbers vs percentage indexes
+          # check absolute magnitude of elements to avoid breaking on negative margins
           gtsummary::all_continuous() ~ function(x) {
             val <- na.omit(x)
             # bypass index scaling logic entirely if calculating aggregate total sums
             if (numeric_summary_type == "sum") {
               return(gtsummary::style_number(x, digits = continuous_digits))
             }
-            if (length(val) > 0 && max(val) > 1) {
+            # use absolute values to verify formatting rules safely
+            # lower case comments without dots
+            if (length(val) > 0 && base::any(base::abs(val) > 1)) {
               return(gtsummary::style_number(x, digits = continuous_digits))
             } else {
-              return(paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
+              return(base::paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
             }
           },
           gtsummary::all_categorical() ~ c(0, 1)
@@ -134,7 +135,6 @@ create_summary_table <- function(data,
       )
     
     # append an overall summary tracking column explicitly if group_by is actively passed
-    # modify label to read total instead of overall when running a sum aggregation table
     if (!is.null(group_by)) {
       overall_label <- if (numeric_summary_type == "sum") "**Total**" else "**Overall**"
       base_summary <- base_summary %>%
@@ -142,14 +142,12 @@ create_summary_table <- function(data,
     }
     
     # append global metadata and formatting styles down the remaining pipeline
-    # omit adding the sample size n column if calculating running metric sums
     if (numeric_summary_type != "sum") {
       base_summary <- base_summary %>% gtsummary::add_n()
     }
     
     base_summary %>%
       gtsummary::bold_labels() %>%
-      # selectively target non overall group headers using all_stat_cols helper wrapper
       gtsummary::modify_header(
         label ~ paste0("**", label_characteristic, "**"),
         gtsummary::all_stat_cols(stat_0 = FALSE) ~ "**{level}**"
