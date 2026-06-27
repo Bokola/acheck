@@ -277,6 +277,9 @@ counts multiple forms of disability among household members.
 
 ## run sampling schemes
 
+
+## calculate HH hunger score
+
 <!--
 There can be other functions, examples and tests in your flat template.
 Each of them will be inflated in a different file, provided that there is a level-1 or level-2 section title to separate from previous functions.
