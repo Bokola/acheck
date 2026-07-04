@@ -125,6 +125,8 @@ library(acheck)
 
 ### check no disability for ages \< 6 years
 
+### calculate depression/anxiety screening indicator
+
 ### calculate disability counts
 
 ### hh disability burden counts

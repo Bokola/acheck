@@ -48,6 +48,10 @@
 <span>  disability_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"level_seeing_disability"</span>, <span class="st">"level_hearing_disability"</span>,</span>
 <span>    <span class="st">"level_selfcare_disability"</span>, <span class="st">"level_remembering_disability"</span>,</span>
 <span>    <span class="st">"level_walking_disability"</span>, <span class="st">"level_communicating_disability"</span><span class="op">)</span>,</span>
+<span>  anxiety_freq <span class="op">=</span> <span class="st">"dis_anxiety"</span>,</span>
+<span>  anxiety_intens <span class="op">=</span> <span class="st">"dis_anxiety_frequency"</span>,</span>
+<span>  depress_freq <span class="op">=</span> <span class="st">"dis_depression"</span>,</span>
+<span>  depress_intens <span class="op">=</span> <span class="st">"dis_anxiety_depression"</span>,</span>
 <span>  age_col <span class="op">=</span> <span class="st">"prot_disability_ind_age"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -61,7 +65,23 @@
 
 
 <dt id="arg-disability-cols">disability_cols<a class="anchor" aria-label="anchor" href="#arg-disability-cols"></a></dt>
-<dd><p>character vector of column names representing the domains</p></dd>
+<dd><p>character vector of column names representing the core domains</p></dd>
+
+
+<dt id="arg-anxiety-freq">anxiety_freq<a class="anchor" aria-label="anchor" href="#arg-anxiety-freq"></a></dt>
+<dd><p>character name of the anxiety frequency column</p></dd>
+
+
+<dt id="arg-anxiety-intens">anxiety_intens<a class="anchor" aria-label="anchor" href="#arg-anxiety-intens"></a></dt>
+<dd><p>character name of the anxiety intensity column</p></dd>
+
+
+<dt id="arg-depress-freq">depress_freq<a class="anchor" aria-label="anchor" href="#arg-depress-freq"></a></dt>
+<dd><p>character name of the depression frequency column</p></dd>
+
+
+<dt id="arg-depress-intens">depress_intens<a class="anchor" aria-label="anchor" href="#arg-depress-intens"></a></dt>
+<dd><p>character name of the depression intensity column</p></dd>
 
 
 <dt id="arg-age-col">age_col<a class="anchor" aria-label="anchor" href="#arg-age-col"></a></dt>

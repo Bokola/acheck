@@ -24,6 +24,9 @@
 - [`calculate_hunger_score()`](https://bokola.github.io/acheck/reference/calculate_hunger_score.md)
   : calculate household hunger score and categorical scale
 
+- [`calculate_psychological_distress()`](https://bokola.github.io/acheck/reference/calculate_psychological_distress.md)
+  : Calculate Psychological Distress Domain Disability Indicator
+
 - [`check_disability()`](https://bokola.github.io/acheck/reference/check_disability.md)
   : validate and recode household disability flags based on repeat group
   ages
