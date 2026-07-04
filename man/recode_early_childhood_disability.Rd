@@ -9,13 +9,25 @@ recode_early_childhood_disability(
   disability_cols = c("level_seeing_disability", "level_hearing_disability",
     "level_selfcare_disability", "level_remembering_disability",
     "level_walking_disability", "level_communicating_disability"),
+  anxiety_freq = "dis_anxiety",
+  anxiety_intens = "dis_anxiety_frequency",
+  depress_freq = "dis_depression",
+  depress_intens = "dis_anxiety_depression",
   age_col = "prot_disability_ind_age"
 )
 }
 \arguments{
 \item{data}{dataframe containing the disability and age columns}
 
-\item{disability_cols}{character vector of column names representing the domains}
+\item{disability_cols}{character vector of column names representing the core domains}
+
+\item{anxiety_freq}{character name of the anxiety frequency column}
+
+\item{anxiety_intens}{character name of the anxiety intensity column}
+
+\item{depress_freq}{character name of the depression frequency column}
+
+\item{depress_intens}{character name of the depression intensity column}
 
 \item{age_col}{character name of the column storing age values}
 }

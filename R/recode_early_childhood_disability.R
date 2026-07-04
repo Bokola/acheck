@@ -3,7 +3,11 @@
 #' reset disability columns based on age thresholds
 #'
 #' @param data dataframe containing the disability and age columns
-#' @param disability_cols character vector of column names representing the domains
+#' @param disability_cols character vector of column names representing the core domains
+#' @param anxiety_freq character name of the anxiety frequency column
+#' @param anxiety_intens character name of the anxiety intensity column
+#' @param depress_freq character name of the depression frequency column
+#' @param depress_intens character name of the depression intensity column
 #' @param age_col character name of the column storing age values
 #'
 #' @returns a modified dataframe with recoded disability entries for children under 6
@@ -17,16 +21,42 @@ recode_early_childhood_disability <- function(data,
                                                 "level_walking_disability",
                                                 "level_communicating_disability"
                                               ),
+                                              anxiety_freq = "dis_anxiety",
+                                              anxiety_intens = "dis_anxiety_frequency",
+                                              depress_freq = "dis_depression",
+                                              depress_intens = "dis_anxiety_depression",
                                               age_col = "prot_disability_ind_age") {
   data %>%
     dplyr::mutate(
+      # recode standard functional domains to baseline choice
+      # lower case comments without dots or dashes
       dplyr::across(
         dplyr::all_of(disability_cols),
         ~ dplyr::if_else(
-          # check if age exists and falls below the 6 year target threshold
           !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
           "No difficulty",
-          # preserve the original cell contents if criteria are not met
+          as.character(.x)
+        )
+      ),
+      
+      # recode anxiety and depression frequency to baseline choice
+      # lower case comments without dots or dashes
+      dplyr::across(
+        dplyr::all_of(c(anxiety_freq, depress_freq)),
+        ~ dplyr::if_else(
+          !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
+          "Never",
+          as.character(.x)
+        )
+      ),
+      
+      # recode anxiety and depression intensity to baseline choice
+      # lower case comments without dots or dashes
+      dplyr::across(
+        dplyr::all_of(c(anxiety_intens, depress_intens)),
+        ~ dplyr::if_else(
+          !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
+          "A little",
           as.character(.x)
         )
       )

@@ -61,6 +61,7 @@ flat_full.Rmd:
   - R/plot_household_counts_interactive.R
   - R/get_partner_beneficiaries.R
   - R/check_disability_single.R
+  - R/calculate_psychological_distress.R
   - R/calculate_disability_counts.R
   - R/calculate_hh_disability_counts.R
   - R/recode_early_childhood_disability.R
