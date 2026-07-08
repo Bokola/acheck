@@ -26,12 +26,19 @@ recode_early_childhood_disability <- function(data,
                                               depress_freq = "dis_depression",
                                               depress_intens = "dis_anxiety_depression",
                                               age_col = "prot_disability_ind_age") {
+  
+  # identify which columns actually exist in the provided dataset
+  # lower case comments without dots or dashes
+  existing_core <- intersect(disability_cols, names(data))
+  existing_freq <- intersect(c(anxiety_freq, depress_freq), names(data))
+  existing_intens <- intersect(c(anxiety_intens, depress_intens), names(data))
+  
   data %>%
     dplyr::mutate(
-      # recode standard functional domains to baseline choice
+      # recode standard functional domains to baseline choice if they exist
       # lower case comments without dots or dashes
       dplyr::across(
-        dplyr::all_of(disability_cols),
+        dplyr::any_of(existing_core),
         ~ dplyr::if_else(
           !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
           "No difficulty",
@@ -39,10 +46,10 @@ recode_early_childhood_disability <- function(data,
         )
       ),
       
-      # recode anxiety and depression frequency to baseline choice
+      # recode anxiety and depression frequency to baseline choice if they exist
       # lower case comments without dots or dashes
       dplyr::across(
-        dplyr::all_of(c(anxiety_freq, depress_freq)),
+        dplyr::any_of(existing_freq),
         ~ dplyr::if_else(
           !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
           "Never",
@@ -50,10 +57,10 @@ recode_early_childhood_disability <- function(data,
         )
       ),
       
-      # recode anxiety and depression intensity to baseline choice
+      # recode anxiety and depression intensity to baseline choice if they exist
       # lower case comments without dots or dashes
       dplyr::across(
-        dplyr::all_of(c(anxiety_intens, depress_intens)),
+        dplyr::any_of(existing_intens),
         ~ dplyr::if_else(
           !is.na(.data[[age_col]]) & .data[[age_col]] < 6,
           "A little",
