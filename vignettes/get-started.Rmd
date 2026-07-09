@@ -305,6 +305,10 @@ Create a chunk with 'development' actions
 These are only included in the present flat template file, their content will not be part of the package anywhere else.
 -->
 
+## calculate average monthly income
+
+
+
 
 # Inflate your package
 

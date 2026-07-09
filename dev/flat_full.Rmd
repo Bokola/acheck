@@ -5775,6 +5775,71 @@ Create a chunk with 'development' actions
 These are only included in the present flat template file, their content will not be part of the package anywhere else.
 -->
 
+## calculate average monthly income
+
+```{r function-calculate_average_monthly_income}
+#' Calculate Total Monthly Income Vector
+#'
+#' Evaluates multiple income sources using case-insensitive column matching
+#' and returns a row-wise sum vector with implicit missing value treatment.
+#'
+#' @param data A data frame containing income source columns.
+#' @param income_patterns Character vector of column name identifiers to match.
+#'
+#' @return A numeric vector representing the total monthly income for each row.
+#' @export
+calculate_average_monthly_income <- function(data, 
+                                             income_patterns = c(
+                                               "IncCasual_Labor_calc",
+                                               "IncSalary_calc",
+                                               "IncGovt_assistance_calc",
+                                               "IncRemittances_calc",
+                                               "IncFamily_friends_calc",
+                                               "IncHumanitarian_assistance_calc",
+                                               "other_sources_calc",
+                                               "IncAgriculture_pasturefarming_calc",
+                                               "IncFishing_calc",
+                                               "IncAgriculture_cropfarming_calc",
+                                               "IncAgriculture_livestockeeping_calc",
+                                               "IncsaleHumanitarian_assistance_calc",
+                                               "Incself_employment_calc"
+                                             )) {
+  
+  # create case-insensitive search pattern from the income arrays
+  # lower case comments without dots or dashes
+  search_regex <- paste0("^(", paste(income_patterns, collapse = "|"), ")$")
+  
+  # locate actual column names matching target components
+  # lower case comments without dots or dashes
+  matched_cols <- grep(search_regex, names(data), value = TRUE, ignore.case = TRUE)
+  
+  # if none of the columns are found return a vector of zeros
+  # lower case comments without dots or dashes
+  if (length(matched_cols) == 0) {
+    warning("none of the specified income columns were found in the dataset")
+    return(numeric(nrow(data)))
+  }
+  
+  # isolate matching columns into a data frame matrix profile
+  # lower case comments without dots or dashes
+  income_subset <- data[, matched_cols, drop = FALSE]
+  
+  # replace missing or blank records with zero and force numeric conversion
+  # lower case comments without dots or dashes
+  income_subset[] <- lapply(income_subset, function(x) {
+    num_x <- suppressWarnings(as.numeric(x))
+    dplyr::if_else(is.na(num_x), 0, num_x)
+  })
+  
+  # return clean row sums vector
+  # lower case comments without dots or dashes
+  return(rowSums(income_subset, na.rm = TRUE))
+}
+
+```
+
+
+
 ```{r development-inflate, eval=FALSE}
 # Keep eval=FALSE to avoid infinite loop in case you hit the knit button
 # Execute in the console directly

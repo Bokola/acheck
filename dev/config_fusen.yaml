@@ -75,6 +75,7 @@ flat_full.Rmd:
   - R/run_sample.R
   - R/calculate_hunger_score.R
   - R/get_top_n_levels.R
+  - R/calculate_average_monthly_income.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:
