@@ -14,6 +14,9 @@
 - [`automate_indicators()`](https://bokola.github.io/acheck/reference/automate_indicators.md)
   : Automate binary indicator variable creation
 
+- [`calculate_average_monthly_income()`](https://bokola.github.io/acheck/reference/calculate_average_monthly_income.md)
+  : Calculate Total Monthly Income Vector
+
 - [`calculate_disability_counts()`](https://bokola.github.io/acheck/reference/calculate_disability_counts.md)
   : calculate a row level individual disability indicator
 

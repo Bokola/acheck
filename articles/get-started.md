@@ -155,6 +155,8 @@ counts multiple forms of disability among household members.
 
 ### get top n levels of a categorical column
 
+### calculate average monthly income
+
 ## Inflate your package
 
 You’re one inflate from paper to box. Build your package from this very
