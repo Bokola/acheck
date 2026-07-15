@@ -151,6 +151,9 @@
   : Extract column names from a data dictionary based on structural
   boundaries
 
+- [`get_outlier_income()`](https://bokola.github.io/acheck/reference/get_outlier_income.md)
+  : Split dataset by expenditure thresholds
+
 - [`get_partial_matches()`](https://bokola.github.io/acheck/reference/get_partial_matches.md)
   : find partial matches between focal and beneficiary
 

@@ -157,6 +157,8 @@ counts multiple forms of disability among household members.
 
 ### calculate average monthly income
 
+### get outlier income/expenditure
+
 ## Inflate your package
 
 You’re one inflate from paper to box. Build your package from this very
