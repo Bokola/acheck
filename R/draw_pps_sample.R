@@ -22,6 +22,18 @@ draw_pps_sample <- function(
   
   set.seed(seed)
   
+  # safety check to handle cases where village grouping is missing or undefined
+  # lower case comments without dots or dashes
+  has_village <- (!is.null(village_id_var)) && (village_id_var %in% names(data))
+  
+  if (!has_village) {
+    internal_village_var <- "tmp_village_id"
+    data <- data %>% 
+      dplyr::mutate(!!internal_village_var := "single_cluster_fallback")
+  } else {
+    internal_village_var <- village_id_var
+  }
+  
   # ----------------------------
   # STEP 1: PPS village allocation
   # ----------------------------
@@ -30,7 +42,7 @@ draw_pps_sample <- function(
     dplyr::count(
       dplyr::across(
         dplyr::all_of(
-          c(county_var, village_id_var)
+          c(county_var, internal_village_var)
         )
       ),
       name = "village_size"
@@ -48,26 +60,25 @@ draw_pps_sample <- function(
       
       county_total = sum(village_size),
       
-      raw_alloc =
-        (.data[[alloc_size_var]] *
-           village_size) /
-        county_total,
+      # isolate allocation variables and explicitly handle unmatched county labels
+      # lower case comments without dots or dashes
+      target_size = dplyr::coalesce(as.numeric(.data[[alloc_size_var]]), 0),
+      
+      raw_alloc = (target_size * village_size) / county_total,
       
       base_alloc = floor(raw_alloc),
       
       frac = raw_alloc - base_alloc,
       
-      remaining =
-        first(.data[[alloc_size_var]]) -
-        sum(base_alloc),
+      remaining = dplyr::first(target_size) - sum(base_alloc),
       
-      sample_alloc =
-        base_alloc +
-        as.integer(
-          dplyr::row_number(
-            dplyr::desc(frac)
-          ) <= remaining
-        )
+      # safely assign remainders while shielding against zero target metrics
+      # lower case comments without dots or dashes
+      sample_alloc = base_alloc + as.integer(
+        dplyr::row_number(dplyr::desc(frac)) <= remaining & remaining > 0
+      ),
+      
+      sample_alloc = dplyr::coalesce(sample_alloc, 0L)
       
     ) %>%
     dplyr::ungroup()
@@ -81,7 +92,7 @@ draw_pps_sample <- function(
     dplyr::group_split(
       dplyr::across(
         dplyr::all_of(
-          c(county_var, village_id_var)
+          c(county_var, internal_village_var)
         )
       )
     ) %>%
@@ -90,25 +101,37 @@ draw_pps_sample <- function(
       
       n_take <- v$sample_alloc[[1]]
       
+      # enforce integer evaluation fallback to shield slice_sample from na values
+      # lower case comments without dots or dashes
+      if (is.na(n_take) || n_take <= 0) {
+        return(dplyr::slice(data, 0))
+      }
+      
       hh <- data %>%
         dplyr::semi_join(
           v,
           by = c(
             county_var,
-            village_id_var
+            internal_village_var
           )
         )
       
       dplyr::slice_sample(
         hh,
         n = min(
-          n_take,
+          as.integer(n_take),
           nrow(hh)
         )
       )
       
     })
   
+  # scrub internal placeholder column from memory profile if it was created
+  # lower case comments without dots or dashes
+  if (!has_village) {
+    sampled <- sampled %>% 
+      dplyr::select(-dplyr::all_of(internal_village_var))
+  }
+  
   sampled
 }
-

@@ -307,6 +307,8 @@ These are only included in the present flat template file, their content will no
 
 ## calculate average monthly income
 
+## get outlier income/expenditure
+
 
 
 
