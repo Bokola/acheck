@@ -16,12 +16,12 @@ create_listing_table(
 
 \item{cols}{columns to include}
 
-\item{labels}{character. labels}
+\item{labels}{list. named list or formulas containing column label mappings}
 
 \item{group_by}{character. grouping variable}
 }
 \value{
-a list
+a gtsummary/gtreg listing object
 }
 \description{
 create \code{gtreg} table listing of data

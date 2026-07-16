@@ -5,27 +5,63 @@
 #'
 #' @param data dataframe
 #' @param cols columns to include
-#' @param labels character. labels
+#' @param labels list. named list or formulas containing column label mappings
 #' @param group_by character. grouping variable 
 #'
-#' @returns a list
+#' @returns a gtsummary/gtreg listing object
 #' @export
 #'
 #' @examples
-#'\dontrun{create_listing_table()}
+#' \dontrun{create_listing_table()}
 create_listing_table <- function(data,
                                  cols = dplyr::everything(),
                                  labels = list(),
                                  group_by = NULL) {
-  data %>%
+  
+  # select relevant columns first
+  # lower case comments without dots or dashes
+  selected_data <- data %>%
+    dplyr::select({{ cols }}, dplyr::any_of(group_by))
+  
+  # clean up any existing empty string labels before applying new ones
+  # lower case comments without dots or dashes
+  for (col in names(selected_data)) {
+    col_attr <- attr(selected_data[[col]], "label")
+    if (!is.null(col_attr) && col_attr == "") {
+      attr(selected_data[[col]], "label") <- NULL
+    }
+  }
+  
+  # parse formula list or named list and set variable labels
+  # lower case comments without dots or dashes
+  if (length(labels) > 0) {
+    selected_data <- labelled::set_variable_labels(
+      selected_data, 
+      .labels = labels, 
+      .strict = FALSE
+    )
+  }
+  
+  # ensure any columns that still have blank labels are reset to raw column names
+  # lower case comments without dots or dashes
+  for (col in names(selected_data)) {
+    col_attr <- attr(selected_data[[col]], "label")
+    if (!is.null(col_attr) && col_attr == "") {
+      attr(selected_data[[col]], "label") <- NULL
+    }
+  }
+  
+  # render listing table with updated labels
+  # lower case comments without dots or dashes
+  selected_data %>%
     {
       if (!is.null(group_by))
         dplyr::arrange(., .data[[group_by]])
       else
         .
     } %>%
-    dplyr::select({{ cols }}, dplyr::any_of(group_by)) %>%
-    gtreg::tbl_listing() %>%
+    gtreg::tbl_listing(
+      group_by = group_by
+    ) %>%
     gtsummary::bold_labels()
 }
-
