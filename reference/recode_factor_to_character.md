@@ -21,5 +21,5 @@ dataframe
 ## Examples
 
 ``` r
-if (FALSE) recode_factor_to_character() # \dontrun{}
+if (FALSE) recode_factor_to_character(df) # \dontrun{}
 ```
