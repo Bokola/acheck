@@ -25,7 +25,7 @@ create_listing_table(
 
 - labels:
 
-  character. labels
+  list. named list or formulas containing column label mappings
 
 - group_by:
 
@@ -33,7 +33,7 @@ create_listing_table(
 
 ## Value
 
-a list
+a gtsummary/gtreg listing object
 
 ## Examples
 
