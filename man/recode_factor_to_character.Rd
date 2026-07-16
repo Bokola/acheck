@@ -16,5 +16,5 @@ dataframe
 recode factors to character
 }
 \examples{
-\dontrun{recode_factor_to_character()}
+\dontrun{recode_factor_to_character(df)}
 }

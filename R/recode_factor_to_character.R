@@ -8,18 +8,28 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{recode_factor_to_character()}
+#' \dontrun{recode_factor_to_character(df)}
 recode_factor_to_character <- function(x) {
   x %>%
   dplyr::mutate(
     dplyr::across(
       dplyr::where(labelled::is.labelled),
-      # convert labels to factors, drop unused levels, and cast to character strings
-      ~ .x %>%
-        as_factor() %>%
-        forcats::fct_drop() %>%
-        as.character()
+      # capture variable label and strip only value labels to protect raw values
+      ~ {
+        var_lbl <- attr(.x, "label")
+        
+        # remove value labels to safely retain raw characters like kakuma or daadab
+        # lower case comments without dots or dashes
+        res <- .x %>%
+          labelled::remove_val_labels() %>%
+          as.character()
+        
+        if (!is.null(var_lbl)) {
+          attr(res, "label") <- var_lbl
+        }
+        
+        res
+      }
     )
   )
-  
 }
