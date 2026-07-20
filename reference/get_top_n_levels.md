@@ -39,7 +39,7 @@ a character vector of category names sorted in descending order
 ## Examples
 
 ``` r
-# lower case comments without dots or dashes
+# 
 survey_df <- data.frame(
   subcounty = 
   c("samburu_east", "samburu_east", "tana_river",

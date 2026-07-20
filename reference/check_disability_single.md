@@ -35,7 +35,7 @@ an updated version of the dataframe with corrected disability flags
 ## Examples
 
 ``` r
-# lower case comments without dots or dashes
+# 
 # create dummy joined dataset
 survey_data <- data.frame(
   uuid = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),

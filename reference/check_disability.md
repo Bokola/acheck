@@ -45,7 +45,7 @@ an updated version of df_out with corrected disability flags
 ## Examples
 
 ``` r
-# lower case comments without dots or dashes
+# 
 # create dummy main dataset
 main_df <- data.frame(
   uuid = c("hh_1", "hh_2", "hh_3"),
