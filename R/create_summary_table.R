@@ -113,22 +113,9 @@ create_summary_table <- function(data,
           gtsummary::all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
-          # 
-          # check absolute magnitude of elements to avoid breaking on negative margins
-          gtsummary::all_continuous() ~ function(x) {
-            val <- na.omit(x)
-            # bypass index scaling logic entirely if calculating aggregate total sums
-            if (numeric_summary_type == "sum") {
-              return(gtsummary::style_number(x, digits = continuous_digits))
-            }
-            # use absolute values to verify formatting rules safely
-            # lower case comments without dots
-            if (length(val) > 0 && base::any(base::abs(val) > 1)) {
-              return(gtsummary::style_number(x, digits = continuous_digits))
-            } else {
-              return(base::paste0(gtsummary::style_number(x * 100, digits = continuous_digits), "%"))
-            }
-          },
+          # style continuous variables without appending percentage signs to means
+          # lower case comments without dots or dashes
+          gtsummary::all_continuous() ~ function(x) gtsummary::style_number(x, digits = continuous_digits),
           gtsummary::all_categorical() ~ c(0, 1)
         ),
         missing = "no"
@@ -172,6 +159,7 @@ create_summary_table <- function(data,
   
   return(raw_gtsummary)
 }
+
 
 #' create a `gtsummary` table from a survey design object
 #'
