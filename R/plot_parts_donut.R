@@ -15,7 +15,7 @@
 #' \dontrun{plot_parts_donut()}
 plot_parts_donut <- function(data, fill_col, palette = c("#81C784", "#FFB74D", "#E65100")) {
   
-  # lower case comments without dots or dashes
+  # 
   # map labels and compute dynamic cumulative coordinates for clean radial centering
   plot_df <- data %>%
     dplyr::count(dplyr::across(dplyr::all_of(fill_col))) %>%

@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#' # lower case comments without dots or dashes
+#' # 
 #' survey_df <- data.frame(
 #'   subcounty = 
 #'   c("samburu_east", "samburu_east", "tana_river",

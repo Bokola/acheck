@@ -28,33 +28,33 @@ calculate_average_monthly_income <- function(data,
                                              )) {
   
   # create case-insensitive search pattern from the income arrays
-  # lower case comments without dots or dashes
+  # 
   search_regex <- paste0("^(", paste(income_patterns, collapse = "|"), ")$")
   
   # locate actual column names matching target components
-  # lower case comments without dots or dashes
+  # 
   matched_cols <- grep(search_regex, names(data), value = TRUE, ignore.case = TRUE)
   
   # if none of the columns are found return a vector of zeros
-  # lower case comments without dots or dashes
+  # 
   if (length(matched_cols) == 0) {
     warning("none of the specified income columns were found in the dataset")
     return(numeric(nrow(data)))
   }
   
   # isolate matching columns into a data frame matrix profile
-  # lower case comments without dots or dashes
+  # 
   income_subset <- data[, matched_cols, drop = FALSE]
   
   # replace missing or blank records with zero and force numeric conversion
-  # lower case comments without dots or dashes
+  # 
   income_subset[] <- lapply(income_subset, function(x) {
     num_x <- suppressWarnings(as.numeric(x))
     dplyr::if_else(is.na(num_x), 0, num_x)
   })
   
   # return clean row sums vector
-  # lower case comments without dots or dashes
+  # 
   return(rowSums(income_subset, na.rm = TRUE))
 }
 

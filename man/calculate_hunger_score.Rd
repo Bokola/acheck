@@ -36,7 +36,7 @@ an updated dataframe with columns 'hhs_score' and 'hhs_categorical'
 calculate household hunger score and categorical scale
 }
 \examples{
-# lower case comments without dots or dashes
+# 
 # create dummy dataset
 survey_df <- data.frame(
   hhsnofood = c("yes", "no", "yes"),

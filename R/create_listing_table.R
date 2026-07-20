@@ -19,12 +19,12 @@ create_listing_table <- function(data,
                                  group_by = NULL) {
   
   # select relevant columns first
-  # lower case comments without dots or dashes
+  # 
   selected_data <- data %>%
     dplyr::select({{ cols }}, dplyr::any_of(group_by))
   
   # clean up any existing empty string labels before applying new ones
-  # lower case comments without dots or dashes
+  # 
   for (col in names(selected_data)) {
     col_attr <- attr(selected_data[[col]], "label")
     if (!is.null(col_attr) && col_attr == "") {
@@ -33,7 +33,7 @@ create_listing_table <- function(data,
   }
   
   # parse formula list or named list and set variable labels
-  # lower case comments without dots or dashes
+  # 
   if (length(labels) > 0) {
     selected_data <- labelled::set_variable_labels(
       selected_data, 
@@ -43,7 +43,7 @@ create_listing_table <- function(data,
   }
   
   # ensure any columns that still have blank labels are reset to raw column names
-  # lower case comments without dots or dashes
+  # 
   for (col in names(selected_data)) {
     col_attr <- attr(selected_data[[col]], "label")
     if (!is.null(col_attr) && col_attr == "") {
@@ -52,7 +52,7 @@ create_listing_table <- function(data,
   }
   
   # render listing table with updated labels
-  # lower case comments without dots or dashes
+  # 
   selected_data %>%
     {
       if (!is.null(group_by))

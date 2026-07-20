@@ -113,7 +113,7 @@ create_summary_table <- function(data,
           gtsummary::all_categorical() ~ "{n} ({p}%)"
         ),
         digits = list(
-          # lower case comments without dots or dashes
+          # 
           # check absolute magnitude of elements to avoid breaking on negative margins
           gtsummary::all_continuous() ~ function(x) {
             val <- na.omit(x)

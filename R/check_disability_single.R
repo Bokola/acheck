@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-#' # lower case comments without dots or dashes
+#' # 
 #' # create dummy joined dataset
 #' survey_data <- data.frame(
 #'   uuid = c("hh_1", "hh_1", "hh_2", "hh_2", "hh_3"),
@@ -27,7 +27,7 @@
 check_disability_single <- function(data, disab_col, uuid_col = "uuid", age = 6) {
   
   # look up matching column name inside the dataframe
-  # lower case comments without dots or dashes
+  # 
   matched_col <- grep(disab_col, names(data), value = TRUE, ignore.case = TRUE)[1]
   
   # stop execution if no match is found

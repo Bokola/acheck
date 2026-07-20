@@ -20,7 +20,7 @@ automate_indicators <- function(df, cols) {
       dplyr::across(
         dplyr::all_of(cols),
         function(x) {
-          # lower case comments without dots or dashes
+          # 
           if (is.numeric(x)) {
             return(dplyr::if_else(is.na(x) | x == 0, 0, x))
           }

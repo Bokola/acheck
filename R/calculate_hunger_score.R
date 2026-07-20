@@ -14,7 +14,7 @@
 #' @export
 #'
 #' @examples
-#' # lower case comments without dots or dashes
+#' # 
 #' # create dummy dataset
 #' survey_df <- data.frame(
 #'   hhsnofood = c("yes", "no", "yes"),

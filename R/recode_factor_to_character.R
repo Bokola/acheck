@@ -19,7 +19,7 @@ recode_factor_to_character <- function(x) {
         var_lbl <- attr(.x, "label")
         
         # remove value labels to safely retain raw characters like kakuma or daadab
-        # lower case comments without dots or dashes
+        # 
         res <- .x %>%
           labelled::remove_val_labels() %>%
           as.character()

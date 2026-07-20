@@ -10,11 +10,11 @@
 get_outlier_income <- function(df, threshold = 50000) {
   
   # identify target columns matching the regex pattern
-  # lower case comments without dots or dashes
+  # 
   target_cols <- grep("amnt$|totalhhexp", names(df), value = TRUE)
   
   # return original data and an empty shell if no target columns are found
-  # lower case comments without dots or dashes
+  # 
   if (length(target_cols) == 0) {
     return(list(
       clean_data = df,
@@ -23,7 +23,7 @@ get_outlier_income <- function(df, threshold = 50000) {
   }
   
   # evaluate threshold condition across all matched columns ignoring NA values
-  # lower case comments without dots or dashes
+  # 
   has_extreme_value <- rowSums(
     sapply(df[target_cols], function(col) {
       if (is.numeric(col)) {
@@ -36,7 +36,7 @@ get_outlier_income <- function(df, threshold = 50000) {
   ) > 0
   
   # split data into clean records and extreme outliers
-  # lower case comments without dots or dashes
+  # 
   list(
     clean_data = df[!has_extreme_value, , drop = FALSE],
     extreme_data = df[has_extreme_value, , drop = FALSE]

@@ -23,7 +23,7 @@ draw_pps_sample <- function(
   set.seed(seed)
   
   # safety check to handle cases where village grouping is missing or undefined
-  # lower case comments without dots or dashes
+  # 
   has_village <- (!is.null(village_id_var)) && (village_id_var %in% names(data))
   
   if (!has_village) {
@@ -61,7 +61,7 @@ draw_pps_sample <- function(
       county_total = sum(village_size),
       
       # isolate allocation variables and explicitly handle unmatched county labels
-      # lower case comments without dots or dashes
+      # 
       target_size = dplyr::coalesce(as.numeric(.data[[alloc_size_var]]), 0),
       
       raw_alloc = (target_size * village_size) / county_total,
@@ -73,7 +73,7 @@ draw_pps_sample <- function(
       remaining = dplyr::first(target_size) - sum(base_alloc),
       
       # safely assign remainders while shielding against zero target metrics
-      # lower case comments without dots or dashes
+      # 
       sample_alloc = base_alloc + as.integer(
         dplyr::row_number(dplyr::desc(frac)) <= remaining & remaining > 0
       ),
@@ -102,7 +102,7 @@ draw_pps_sample <- function(
       n_take <- v$sample_alloc[[1]]
       
       # enforce integer evaluation fallback to shield slice_sample from na values
-      # lower case comments without dots or dashes
+      # 
       if (is.na(n_take) || n_take <= 0) {
         return(dplyr::slice(data, 0))
       }
@@ -127,7 +127,7 @@ draw_pps_sample <- function(
     })
   
   # scrub internal placeholder column from memory profile if it was created
-  # lower case comments without dots or dashes
+  # 
   if (!has_village) {
     sampled <- sampled %>% 
       dplyr::select(-dplyr::all_of(internal_village_var))

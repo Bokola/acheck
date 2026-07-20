@@ -45,27 +45,27 @@ calculate_psychological_distress <- function(data,
                                              depress_freq, 
                                              depress_intens) {
   # convert input column names to symbols for tidy evaluation
-  # lower case comments without dots or dashes
+  # 
   af <- dplyr::sym(anxiety_freq)
   ai <- dplyr::sym(anxiety_intens)
   df <- dplyr::sym(depress_freq)
   di <- dplyr::sym(depress_intens)
   
   # track standard missing data labels
-  # lower case comments without dots or dashes
+  # 
   missing_vals <- c("refused", "don't know", "don\u2019t know", NA_character_)
   
   data %>%
     dplyr::mutate(
       # normalize input strings to lowercase
-      # lower case comments without dots or dashes
+      # 
       af_lower = tolower(!!af),
       ai_lower = tolower(!!ai),
       df_lower = tolower(!!df),
       di_lower = tolower(!!di),
       
       # score anxiety module
-      # lower case comments without dots or dashes
+      # 
       has_anxiety = dplyr::case_when(
         (af_lower %in% missing_vals) | (ai_lower %in% missing_vals) ~ NA_real_,
         af_lower == "daily" & ai_lower %in% c("a lot", "somewhere in between a little and a lot") ~ 1,
@@ -74,7 +74,7 @@ calculate_psychological_distress <- function(data,
       ),
       
       # score depression module
-      # lower case comments without dots or dashes
+      # 
       has_depression = dplyr::case_when(
         (df_lower %in% missing_vals) | (di_lower %in% missing_vals) ~ NA_real_,
         df_lower == "daily" & di_lower %in% c("a lot", "somewhere in between a little and a lot") ~ 1,
@@ -83,7 +83,7 @@ calculate_psychological_distress <- function(data,
       ),
       
       # build composite indicator for psychological domain
-      # lower case comments without dots or dashes
+      # 
       has_disability_psych = dplyr::case_when(
         is.na(has_anxiety) & is.na(has_depression) ~ NA_real_,
         has_anxiety == 1 | has_depression == 1 ~ 1,
@@ -91,7 +91,7 @@ calculate_psychological_distress <- function(data,
       )
     ) %>%
     # drop structural normalization variables
-    # lower case comments without dots or dashes
+    # 
     dplyr::select(-c(af_lower, ai_lower, df_lower, di_lower))
 }
 
@@ -108,7 +108,7 @@ calculate_psychological_distress <- function(data,
 #' @export
 #'
 #' @examples
-#' # lower case comments without dots or dashes
+#' # 
 #' # create dummy main dataset
 #' main_df <- data.frame(
 #'   uuid = c("hh_1", "hh_2", "hh_3"),
@@ -130,7 +130,7 @@ calculate_psychological_distress <- function(data,
 check_disability <- function(df_out, df_disab, disab_col = "HHM_disability", uuid_col = "uuid", age = 6) {
   
   # look up full matching column name inside target datasets
-  # lower case comments without dots or dashes
+  # 
   matched_out_col <- grep(disab_col, names(df_out), value = TRUE, ignore.case = TRUE)[1]
   matched_disab_col <- grep(disab_col, names(df_disab), value = TRUE, ignore.case = TRUE)[1]
   
