@@ -5942,6 +5942,41 @@ get_outlier_income <- function(df, threshold = 50000) {
 }
 ```
 
+## find uuid cols
+
+```{r function-find_uuid_cols}
+#' find columns containing uuid strings
+#'
+#' @param df dataframe
+#' @param threshold numeric proportion of non-NA values that must match the uuid pattern to flag the column default is 0.8
+#'
+#' @returns character vector of column names matching the uuid pattern
+#' @export
+#'
+#' @examples
+#' \dontrun{find_uuid_cols(df)}
+find_uuid_cols <- function(df, threshold = 0.8) {
+  # regular expression matching standard 8-4-4-4-12 hex string uuid pattern
+
+  uuid_pattern <- "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+  
+  # identify target columns that are character or factor
+
+  candidate_cols <- names(df)[sapply(df, function(x) is.character(x) || is.factor(x))]
+  
+  # evaluate proportion of matching values per candidate column
+
+  matching_cols <- candidate_cols[sapply(candidate_cols, function(col) {
+    vals <- stats::na.omit(as.character(df[[col]]))
+    
+    if (length(vals) == 0) return(FALSE)
+    
+    mean(grepl(uuid_pattern, vals)) >= threshold
+  })]
+  
+  matching_cols
+}
+```
 
 
 ```{r development-inflate, eval=FALSE}

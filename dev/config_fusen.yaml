@@ -77,6 +77,7 @@ flat_full.Rmd:
   - R/get_top_n_levels.R
   - R/calculate_average_monthly_income.R
   - R/get_outlier_income.R
+  - R/find_uuid_cols.R
   tests: tests/testthat/test-format_num.R
   vignettes: vignettes/get-started.Rmd
   inflate:
