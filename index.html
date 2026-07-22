@@ -53,410 +53,246 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="package-unocha-helper-functions">📦 UNOCHA Helper Functions<a class="anchor" aria-label="anchor" href="#package-unocha-helper-functions"></a>
+<div class="page-header"><h1 id="package-acted-data-helper-functions">📦 ACTED Data Helper Functions<a class="anchor" aria-label="anchor" href="#package-acted-data-helper-functions"></a>
 </h1></div>
 <ul>
 <li>
-<a href="#package-unocha-helper-functions-toolkit">📦 UNOCHA Helper Functions Toolkit</a>
+<a href="#acheck">acheck</a>
 <ul>
-<li><a href="#rocket-installation">🚀 Installation</a></li>
-</ul>
-</li>
-<li>
-<a href="#reporting--tables">Reporting &amp; Tables</a>
-<ul>
-<li>
-<a href="#create_summary_table"><code>create_summary_table()</code></a>
-<ul>
-<li><a href="#features">Features</a></li>
-</ul>
-</li>
-<li><a href="#create_listing_table"><code>create_listing_table()</code></a></li>
-<li><a href="#add_gt_to_word"><code>add_gt_to_word()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#data-cleaning">Data Cleaning</a>
-<ul>
-<li><a href="#clean_string"><code>clean_string()</code></a></li>
-<li><a href="#clean_camp"><code>clean_camp()</code></a></li>
-<li><a href="#cut_numeric"><code>cut_numeric()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#validation--matching">Validation &amp; Matching</a>
-<ul>
-<li><a href="#check_esr_registrations"><code>check_esr_registrations()</code></a></li>
-<li><a href="#get_duplicates"><code>get_duplicates()</code></a></li>
-<li><a href="#get_distinct"><code>get_distinct()</code></a></li>
-<li><a href="#get_partial_matches"><code>get_partial_matches()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#kobo-integration">Kobo Integration</a>
-<ul>
-<li><a href="#pull_kobo_data"><code>pull_kobo_data()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#exports">Exports</a>
-<ul>
-<li><a href="#export_to_excel_formatted"><code>export_to_excel_formatted()</code></a></li>
-<li><a href="#export_to_excel_appended"><code>export_to_excel_appended()</code></a></li>
-<li><a href="#export_list_to_word"><code>export_list_to_word()</code></a></li>
-<li><a href="#write_list_to_excel"><code>write_list_to_excel()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#visualization">Visualization</a>
-<ul>
-<li><a href="#plot_bar"><code>plot_bar()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#utility-functions">Utility Functions</a>
-<ul>
-<li><a href="#collapse_villages"><code>collapse_villages()</code></a></li>
-<li><a href="#add_custom_total"><code>add_custom_total()</code></a></li>
-<li><a href="#get_standard_villages"><code>get_standard_villages()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#privacy--deidentification">Privacy &amp; De‑Identification</a>
-<ul>
-<li><a href="#get_pii"><code>get_pii()</code></a></li>
-</ul>
-</li>
-<li>
-<a href="#dependencies">Dependencies</a>
-<ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#basic-examples">Basic Examples</a></li>
+<li><a href="#core-functions-summary">Core Functions Summary</a></li>
 <li><a href="#man_technologist-author-notes">👨‍💻 Author Notes</a></li>
 </ul>
 </li>
 </ul>
-<style>
-body {font-family: 'Segoe UI', sans-serif;}
-h1,h2,h3 {color:#0066A1;}
-pre {background:#f8f9fa; border-left:4px solid #0066A1;}
-</style>
 </div>
 <div class="section level1">
-<h1 id="package-unocha-helper-functions-toolkit">📦 UNOCHA Helper Functions Toolkit<a class="anchor" aria-label="anchor" href="#package-unocha-helper-functions-toolkit"></a>
+<h1 id="acheck">acheck<a class="anchor" aria-label="anchor" href="#acheck"></a>
 </h1>
-<p>A curated collection of reusable <strong>R helper functions</strong> for:</p>
-<ul>
-<li>📊 Reporting &amp; summaries (<code>gtsummary</code>, <code>flextable</code>, <code>officer</code>)</li>
-<li>🧹 Data cleaning &amp; standardization</li>
-<li>🔍 Duplicate detection &amp; QA</li>
-<li>📈 Visualization</li>
-<li>📁 Excel / Word exports</li>
-<li>🔐 De‑identification / PII handling</li>
-<li>🤖 KoboToolbox integration</li>
-</ul>
-<hr>
+<p>The goal of <code>acheck</code> is to streamline data verification, cleaning, sampling, and reporting workflows.</p>
 <div class="section level2">
-<h2 id="rocket-installation">🚀 Installation<a class="anchor" aria-label="anchor" href="#rocket-installation"></a>
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
+<p>You can install the development version of <code>acheck</code> like so:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"bokola/acheck"</span><span class="op">)</span></span></code></pre></div>
-<hr>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"bokola/acheck"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level1">
-<h1 id="reporting--tables">Reporting &amp; Tables<a class="anchor" aria-label="anchor" href="#reporting--tables"></a>
-</h1>
 <div class="section level2">
-<h2 id="create_summary_table">
-<code>create_summary_table()</code><a class="anchor" aria-label="anchor" href="#create_summary_table"></a>
+<h2 id="basic-examples">Basic Examples<a class="anchor" aria-label="anchor" href="#basic-examples"></a>
 </h2>
-<p>Generate publication‑ready summary tables.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/create_summary_table.html">create_summary_table</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df</span>,</span>
-<span>  cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">sex</span><span class="op">)</span>,</span>
-<span>  group_by <span class="op">=</span> <span class="st">"partner"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
-</h3>
-<p>✔ Stratified summaries<br>
-✔ Grouped tables<br>
-✔ Custom labels<br>
-✔ Continuous + categorical support</p>
-<hr>
-</div>
-</div>
-<div class="section level2">
-<h2 id="create_listing_table">
-<code>create_listing_table()</code><a class="anchor" aria-label="anchor" href="#create_listing_table"></a>
-</h2>
-<p>Create clean record listings.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/create_listing_table.html">create_listing_table</a></span><span class="op">(</span><span class="va">df</span>, cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">phone</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="add_gt_to_word">
-<code>add_gt_to_word()</code><a class="anchor" aria-label="anchor" href="#add_gt_to_word"></a>
-</h2>
-<p>Export <code>gtsummary</code> outputs to Word.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">doc</span> <span class="op">&lt;-</span> <span class="fu">officer</span><span class="fu">::</span><span class="fu"><a href="https://davidgohel.github.io/officer/reference/read_docx.html" class="external-link">read_docx</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://bokola.github.io/acheck/">acheck</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/add_gt_to_word.html">add_gt_to_word</a></span><span class="op">(</span></span>
-<span>  <span class="va">doc</span>,</span>
-<span>  gt_obj <span class="op">=</span> <span class="va">tbl</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Beneficiary Summary"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="data-cleaning">Data Cleaning<a class="anchor" aria-label="anchor" href="#data-cleaning"></a>
-</h1>
-<div class="section level2">
-<h2 id="clean_string">
-<code>clean_string()</code><a class="anchor" aria-label="anchor" href="#clean_string"></a>
-</h2>
-<p>Normalize text values.</p>
-<p>Transforms:</p>
-<ul>
-<li>lowercase</li>
-<li>remove spaces</li>
-<li>remove punctuation</li>
-<li>keep alphanumerics</li>
-</ul>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="st">"Nachola-124"</span><span class="op">)</span></span></code></pre></div>
-<p>Result:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="st">"nachola124"</span></span></code></pre></div>
-<hr>
+<span><span class="co"># clean string inputs safely</span></span>
+<span><span class="fu"><a href="reference/clean_string.html">clean_string</a></span><span class="op">(</span><span class="st">"  Nachola124! "</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "nachola124"</span></span>
+<span></span>
+<span><span class="co"># clean phone numbers by standardizing county codes</span></span>
+<span><span class="va">df_phones</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>telephone_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"712345678"</span>, <span class="st">"0712345678"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/clean_phone_number.html">clean_phone_number</a></span><span class="op">(</span><span class="va">df_phones</span>, col <span class="op">=</span> <span class="st">"telephone_number"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   telephone_number</span></span>
+<span><span class="co">#&gt; 1     254712345678</span></span>
+<span><span class="co">#&gt; 2     254712345678</span></span>
+<span></span>
+<span><span class="co"># categorize numeric inputs</span></span>
+<span><span class="fu"><a href="reference/cut_numeric.html">cut_numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">12</span>, <span class="fl">19</span>, <span class="fl">25</span><span class="op">)</span>, breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="cn">Inf</span>, <span class="fl">18</span>, <span class="cn">Inf</span><span class="op">)</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"&lt;18"</span>, <span class="st">"&gt;=18"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] &lt;18  &lt;18  &lt;18  &gt;=18 &gt;=18</span></span>
+<span><span class="co">#&gt; Levels: &lt;18 &gt;=18</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="clean_camp">
-<code>clean_camp()</code><a class="anchor" aria-label="anchor" href="#clean_camp"></a>
+<h2 id="core-functions-summary">Core Functions Summary<a class="anchor" aria-label="anchor" href="#core-functions-summary"></a>
 </h2>
-<p>Standardize camp names.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/clean_camp.html">clean_camp</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"ben_camp"</span><span class="op">)</span></span></code></pre></div>
-<p>Handles:</p>
-<ul>
-<li>Nairobi</li>
-<li>Kakuma</li>
-<li>Daadab</li>
-<li>common misspellings / aliases</li>
-</ul>
-<hr>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/format_num.html">format_num()</a></code></td>
+<td>Formats numeric vectors using <code>gtsummary</code> styles.</td>
+</tr>
+<tr>
+<td><code><a href="reference/add_gt_to_word.html">add_gt_to_word()</a></code></td>
+<td>Appends <code>gtsummary</code> objects directly into Word documents.</td>
+</tr>
+<tr>
+<td><code><a href="reference/clean_username.html">clean_username()</a></code></td>
+<td>Standardizes string formats to clean title case.</td>
+</tr>
+<tr>
+<td><code><a href="reference/export_list_to_word.html">export_list_to_word()</a></code></td>
+<td>Exports a list of data frames or tables to a Word file.</td>
+</tr>
+<tr>
+<td><code><a href="reference/create_summary_table.html">create_summary_table()</a></code></td>
+<td>Builds customizable <code>gtsummary</code> tables.</td>
+</tr>
+<tr>
+<td><code><a href="reference/create_survey_summary_table.html">create_survey_summary_table()</a></code></td>
+<td>Generates summary tables for weighted survey design objects.</td>
+</tr>
+<tr>
+<td><code><a href="reference/create_listing_table.html">create_listing_table()</a></code></td>
+<td>Creates formatted record listings with <code>gtreg</code>.</td>
+</tr>
+<tr>
+<td><code><a href="reference/clean_string.html">clean_string()</a></code></td>
+<td>Converts strings to lowercase and strips non-alphanumeric characters.</td>
+</tr>
+<tr>
+<td><code><a href="reference/clean_phone_number.html">clean_phone_number()</a></code></td>
+<td>Normalizes Kenyan phone numbers by prepending <code>254</code>.</td>
+</tr>
+<tr>
+<td><code><a href="reference/process_payroll.html">process_payroll()</a></code></td>
+<td>Runs comprehensive cleaning pipelines on payroll data frames.</td>
+</tr>
+<tr>
+<td><code><a href="reference/clean_camp.html">clean_camp()</a></code></td>
+<td>Recodes beneficiary location labels into standardized refugee camps.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_group_cols.html">get_group_cols()</a></code></td>
+<td>Extracts variable names from data dictionaries by positional index.</td>
+</tr>
+<tr>
+<td><code><a href="reference/check_esr_registrations.html">check_esr_registrations()</a></code></td>
+<td>Checks for duplicate household entries across dataset pairs.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_standard_villages.html">get_standard_villages()</a></code></td>
+<td>Splits and standardizes multi-village entries.</td>
+</tr>
+<tr>
+<td><code><a href="reference/find_extra_agency_records.html">find_extra_agency_records()</a></code></td>
+<td>Identifies unmatched audit records between datasets.</td>
+</tr>
+<tr>
+<td><code><a href="reference/grep_columns_in_list.html">grep_columns_in_list()</a></code></td>
+<td>Searches for matching column names across lists of data frames.</td>
+</tr>
+<tr>
+<td><code><a href="reference/pull_kobo_data.html">pull_kobo_data()</a></code></td>
+<td>Fetches survey submissions directly from KoboToolbox API.</td>
+</tr>
+<tr>
+<td><code><a href="reference/pull_kobo_data_mpca.html">pull_kobo_data_mpca()</a></code></td>
+<td>Downloads and aligns complex multi-version Kobo dataset structures.</td>
+</tr>
+<tr>
+<td><code><a href="reference/clean_kobo_excel.html">clean_kobo_excel()</a></code></td>
+<td>Normalizes manual Excel exports to match API formatting standards.</td>
+</tr>
+<tr>
+<td><code><a href="reference/cut_numeric.html">cut_numeric()</a></code></td>
+<td>Bins numeric vectors into labeled factor categories.</td>
+</tr>
+<tr>
+<td><code><a href="reference/export_to_excel_formatted.html">export_to_excel_formatted()</a></code></td>
+<td>Writes summary objects to Excel with custom formatting rules.</td>
+</tr>
+<tr>
+<td><code><a href="reference/export_to_excel_appended.html">export_to_excel_appended()</a></code></td>
+<td>Appends new worksheets safely to existing Excel workbooks.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_duplicates.html">get_duplicates()</a></code></td>
+<td>Returns duplicate record instances based on key variables.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_distinct.html">get_distinct()</a></code></td>
+<td>Deduplicates records based on phone and name variations.</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_bar.html">plot_bar()</a></code></td>
+<td>Generates standard summary bar charts using <code>ggplot2</code>.</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_bar_top_n.html">plot_bar_top_n()</a></code></td>
+<td>Plots frequency distributions filtered to top <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math> categories.</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_age_gender.html">plot_age_gender()</a></code></td>
+<td>Builds age-gender population pyramids using <code>patchwork</code>.</td>
+</tr>
+<tr>
+<td><code><a href="reference/patchwork_grid.html">patchwork_grid()</a></code></td>
+<td>Arranges multiple plots into structured grid layouts.</td>
+</tr>
+<tr>
+<td><code><a href="reference/add_custom_total.html">add_custom_total()</a></code></td>
+<td>Calculates custom summary aggregate rows for data frames.</td>
+</tr>
+<tr>
+<td><code><a href="reference/collapse_villages.html">collapse_villages()</a></code></td>
+<td>Merges shared target rows while concatenating village labels.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_partial_matches.html">get_partial_matches()</a></code></td>
+<td>Detects approximate string inclusion between two variables.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_partial_matches_extend.html">get_partial_matches_extend()</a></code></td>
+<td>Maps the best string match between data frames using Jaro-Winkler distances.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_pii.html">get_pii()</a></code></td>
+<td>Isolates personally identifiable information from datasets.</td>
+</tr>
+<tr>
+<td><code><a href="reference/write_list_to_excel.html">write_list_to_excel()</a></code></td>
+<td>Writes a list of data frames into a single Excel workbook.</td>
+</tr>
+<tr>
+<td><code><a href="reference/flatten_dm_by_names.html">flatten_dm_by_names()</a></code></td>
+<td>Extracts and flattens relational data models (<code>dm</code>) into data frame lists.</td>
+</tr>
+<tr>
+<td><code><a href="reference/preprocess_reg.html">preprocess_reg()</a></code></td>
+<td>Runs complete pre-processing logic for registration data.</td>
+</tr>
+<tr>
+<td><code><a href="reference/preprocess.html">preprocess()</a></code></td>
+<td>Standardizes demographic variables, labels, and categories.</td>
+</tr>
+<tr>
+<td><code><a href="reference/slice_reg.html">slice_reg()</a></code></td>
+<td>Filters registration records based on target date boundaries.</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_edit_data.html">get_edit_data()</a></code></td>
+<td>Imports and prepares partner data modification files.</td>
+</tr>
+<tr>
+<td><code><a href="reference/draw_pps_sample.html">draw_pps_sample()</a></code></td>
+<td>Draws a Probability Proportional to Size (PPS) household sample.</td>
+</tr>
+<tr>
+<td><code><a href="reference/draw_pps_hamilton.html">draw_pps_hamilton()</a></code></td>
+<td>Performs PPS sampling using the Hamilton largest-remainder method.</td>
+</tr>
+<tr>
+<td><code><a href="reference/draw_strs_sample.html">draw_strs_sample()</a></code></td>
+<td>Draws a Stratified Simple Random Sample across strata.</td>
+</tr>
+<tr>
+<td><code><a href="reference/draw_cluster_sample.html">draw_cluster_sample()</a></code></td>
+<td>Performs two-stage cluster random sampling across villages.</td>
+</tr>
+<tr>
+<td><code><a href="reference/draw_systematic_across_villages.html">draw_systematic_across_villages()</a></code></td>
+<td>Executes systematic random sampling across ordered clusters.</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="section level2">
-<h2 id="cut_numeric">
-<code>cut_numeric()</code><a class="anchor" aria-label="anchor" href="#cut_numeric"></a>
-</h2>
-<p>Convert numeric vectors into categories.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cut_numeric.html">cut_numeric</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="validation--matching">Validation &amp; Matching<a class="anchor" aria-label="anchor" href="#validation--matching"></a>
-</h1>
-<div class="section level2">
-<h2 id="check_esr_registrations">
-<code>check_esr_registrations()</code><a class="anchor" aria-label="anchor" href="#check_esr_registrations"></a>
-</h2>
-<p>Cross‑check registrations against ESR datasets using:</p>
-<ul>
-<li>IDs</li>
-<li>phone numbers</li>
-<li>names</li>
-<li>partial name combinations</li>
-</ul>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/check_esr_registrations.html">check_esr_registrations</a></span><span class="op">(</span><span class="va">df_clean</span>, <span class="va">df_esr</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="get_duplicates">
-<code>get_duplicates()</code><a class="anchor" aria-label="anchor" href="#get_duplicates"></a>
-</h2>
-<p>Detect:</p>
-<p>✔ Shared phones across different names<br>
-✔ Shared names across different phones<br>
-✔ Exact duplicate combinations</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_duplicates.html">get_duplicates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="get_distinct">
-<code>get_distinct()</code><a class="anchor" aria-label="anchor" href="#get_distinct"></a>
-</h2>
-<p>Return cleaned non‑duplicate records.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_distinct.html">get_distinct</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="get_partial_matches">
-<code>get_partial_matches()</code><a class="anchor" aria-label="anchor" href="#get_partial_matches"></a>
-</h2>
-<p>Find partial string matches.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_partial_matches.html">get_partial_matches</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<p>Useful for QA and fuzzy beneficiary review.</p>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="kobo-integration">Kobo Integration<a class="anchor" aria-label="anchor" href="#kobo-integration"></a>
-</h1>
-<div class="section level2">
-<h2 id="pull_kobo_data">
-<code>pull_kobo_data()</code><a class="anchor" aria-label="anchor" href="#pull_kobo_data"></a>
-</h2>
-<p>Pull live KoboToolbox project data.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/pull_kobo_data.html">pull_kobo_data</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Uses environment variables:</p>
-<ul>
-<li><code>kobo_url</code></li>
-<li><code>unocha_id</code></li>
-<li><code>unocha_token</code></li>
-</ul>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="exports">Exports<a class="anchor" aria-label="anchor" href="#exports"></a>
-</h1>
-<div class="section level2">
-<h2 id="export_to_excel_formatted">
-<code>export_to_excel_formatted()</code><a class="anchor" aria-label="anchor" href="#export_to_excel_formatted"></a>
-</h2>
-<p>Export multiple tables to a styled workbook.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/export_to_excel_formatted.html">export_to_excel_formatted</a></span><span class="op">(</span><span class="va">my_tables</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="export_to_excel_appended">
-<code>export_to_excel_appended()</code><a class="anchor" aria-label="anchor" href="#export_to_excel_appended"></a>
-</h2>
-<p>Append results into existing workbooks.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/export_to_excel_appended.html">export_to_excel_appended</a></span><span class="op">(</span></span>
-<span>  list_of_objects <span class="op">=</span> <span class="va">tables</span>,</span>
-<span>  sheetname <span class="op">=</span> <span class="st">"Summary"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="export_list_to_word">
-<code>export_list_to_word()</code><a class="anchor" aria-label="anchor" href="#export_list_to_word"></a>
-</h2>
-<p>Export a named list of tables into Word.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/export_list_to_word.html">export_list_to_word</a></span><span class="op">(</span><span class="va">table_list</span>, <span class="st">"report.docx"</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="write_list_to_excel">
-<code>write_list_to_excel()</code><a class="anchor" aria-label="anchor" href="#write_list_to_excel"></a>
-</h2>
-<p>Write named dataframes into multi‑sheet Excel files.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/write_list_to_excel.html">write_list_to_excel</a></span><span class="op">(</span><span class="va">df_list</span>, <span class="st">"output.xlsx"</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
-</h1>
-<div class="section level2">
-<h2 id="plot_bar">
-<code>plot_bar()</code><a class="anchor" aria-label="anchor" href="#plot_bar"></a>
-</h2>
-<p>Generate polished bar charts.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_bar.html">plot_bar</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df</span>,</span>
-<span>  x_var <span class="op">=</span> <span class="va">partner</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Partner Distribution"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Features:</p>
-<p>✔ counts<br>
-✔ percentages<br>
-✔ custom colors<br>
-✔ dynamic labels</p>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="utility-functions">Utility Functions<a class="anchor" aria-label="anchor" href="#utility-functions"></a>
-</h1>
-<div class="section level2">
-<h2 id="collapse_villages">
-<code>collapse_villages()</code><a class="anchor" aria-label="anchor" href="#collapse_villages"></a>
-</h2>
-<p>Collapse villages sharing targets.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/collapse_villages.html">collapse_villages</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="add_custom_total">
-<code>add_custom_total()</code><a class="anchor" aria-label="anchor" href="#add_custom_total"></a>
-</h2>
-<p>Append totals rows.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/add_custom_total.html">add_custom_total</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="get_standard_villages">
-<code>get_standard_villages()</code><a class="anchor" aria-label="anchor" href="#get_standard_villages"></a>
-</h2>
-<p>Standardize village labels using reference datasets.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_standard_villages.html">get_standard_villages</a></span><span class="op">(</span><span class="va">df_partner</span>, <span class="va">df_clean</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="privacy--deidentification">Privacy &amp; De‑Identification<a class="anchor" aria-label="anchor" href="#privacy--deidentification"></a>
-</h1>
-<div class="section level2">
-<h2 id="get_pii">
-<code>get_pii()</code><a class="anchor" aria-label="anchor" href="#get_pii"></a>
-</h2>
-<p>Separate personally identifying information.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_pii.html">get_pii</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<p>Returns:</p>
-<ol style="list-style-type: decimal">
-<li>identifying variables</li>
-<li>de‑identified dataset</li>
-<li>original dataset</li>
-</ol>
-<hr>
-</div>
-</div>
-<div class="section level1">
-<h1 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a>
-</h1>
-<p>Core packages:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dplyr</span></span>
-<span><span class="va">gtsummary</span></span>
-<span><span class="va">openxlsx</span></span>
-<span><span class="va">ggplot2</span></span>
-<span><span class="va">officer</span></span>
-<span><span class="va">flextable</span></span>
-<span><span class="va">robotoolbox</span></span>
-<span><span class="va">stringr</span></span></code></pre></div>
-<hr>
 <div class="section level2">
 <h2 id="man_technologist-author-notes">👨‍💻 Author Notes<a class="anchor" aria-label="anchor" href="#man_technologist-author-notes"></a>
 </h2>

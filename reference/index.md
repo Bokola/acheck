@@ -124,6 +124,9 @@
 - [`find_name_matches()`](https://bokola.github.io/acheck/reference/find_name_matches.md)
   : Identify Potential Beneficiary Name Matches From a Master Dataset
 
+- [`find_uuid_cols()`](https://bokola.github.io/acheck/reference/find_uuid_cols.md)
+  : find columns containing uuid strings
+
 - [`flatten_dm_by_names()`](https://bokola.github.io/acheck/reference/flatten_dm_by_names.md)
   : flatten all tables within a dm object into a list of data frames
 
