@@ -19,7 +19,8 @@ automate_indicators(df, cols)
 
 - cols:
 
-  A character vector specifying the target column names to process.
+  A character vector specifying the target column names to process
+  (case-insensitive).
 
 ## Value
 
