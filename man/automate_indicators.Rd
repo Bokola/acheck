@@ -9,7 +9,7 @@ automate_indicators(df, cols)
 \arguments{
 \item{df}{A dataframe or tibble object.}
 
-\item{cols}{A character vector specifying the target column names to process.}
+\item{cols}{A character vector specifying the target column names to process (case-insensitive).}
 }
 \value{
 A modified dataframe with updated raw counts and appended indicator columns.

@@ -7,18 +7,21 @@
 #' underlying numeric and character type properties, preserving the original name.
 #'
 #' @param df A dataframe or tibble object.
-#' @param cols A character vector specifying the target column names to process.
+#' @param cols A character vector specifying the target column names to process (case-insensitive).
 #'
 #' @return A modified dataframe with updated raw counts and appended indicator columns.
 #' @importFrom dplyr mutate across all_of if_else
 #' @importFrom stringr str_detect
 #' @export
 automate_indicators <- function(df, cols) {
+  # map case insensitive target columns to actual dataframe column names
+  matched_cols <- colnames(df)[tolower(colnames(df)) %in% tolower(cols)]
+  
   df %>%
     # first pass clean all raw numeric count inputs to handle nas and zeros universally
     dplyr::mutate(
       dplyr::across(
-        dplyr::all_of(cols),
+        dplyr::all_of(matched_cols),
         function(x) {
           # 
           if (is.numeric(x)) {
@@ -31,7 +34,7 @@ automate_indicators <- function(df, cols) {
     # second pass generate indicators and append ind cleanly to the original column names
     dplyr::mutate(
       dplyr::across(
-        dplyr::all_of(cols), 
+        dplyr::all_of(matched_cols), 
         function(x) {
           if (is.numeric(x)) {
             indicator <- dplyr::if_else(x == 0, 0, 1)
